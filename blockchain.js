@@ -1,28 +1,26 @@
 const Block    = require('./block.js');
 var LinkedList = require('dbly-linked-list');
 
-const BlockChain = (function(){
-
-  var _chain = new LinkedList();
-  _chain.insert(new Block("Genesis Block"));
+(function () {
 
   function BlockChain(){
-    return this;
+    this._chain = new LinkedList();
+    this._chain.insert(new Block("Genesis Block"));
   };
 
-  BlockChain.prototype.addBlock = function(data){
-    const prevHash = _chain.getTailNode()
-                           .getData()
-                           .getHash();
+  BlockChain.prototype = {
+    addBlock: function(data){
+      const prevHash = this._chain.getTailNode()
+                            .getData()
+                            .getHash();
+      var temp = new Block(data, prevHash);
+      this._chain.insert(temp);
+    },
 
-    _chain.insert(new Block(data, prevHash));
+    print: function(){
+      this._chain.forEach(function(l){ l.getData().print(); });
+    }
   };
 
-  BlockChain.prototype.print = function(){
-    _chain.forEach(function(l){ l.getData().print(); });
-  };
-
-  return BlockChain;
+  module.exports = BlockChain;
 }());
-
-module.exports = BlockChain;
