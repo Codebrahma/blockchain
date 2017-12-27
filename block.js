@@ -8,6 +8,7 @@ const crypto   = require('crypto');
       obj.get('prevBlockHash'),
       obj.get('data'),
       obj.get('timeStamp'),
+      obj.get('nonce'),
     ].join();
 
     return crypto.createHmac('sha256', headers).digest('hex')
@@ -18,8 +19,8 @@ const crypto   = require('crypto');
       "timeStamp"    : String( new Date() ),
       "prevBlockHash": String(prevBlockHash),
       "data"         : String(data),
+      "nonce"        : 0,
     });
-    this._block = this._block.set('hash', Hashify(this._block));
   };
 
   Block.prototype = {
@@ -27,12 +28,27 @@ const crypto   = require('crypto');
       console.log("Data          : " + this._block.get("data"));
       console.log("Time Stamp    : " + this._block.get("timeStamp"));
       console.log("PrevBlockHash : " + this._block.get("prevBlockHash"));
+      console.log("Nonce         : " + this._block.get("nonce"));
       console.log("Hash          : " + this._block.get("hash"));
+      console.log("PoW?          : " + this.validate());
       console.log("---------------------------------------------------------------------------------");
     },
 
     getHash: function(){
       return this._block.get("hash");
+    },
+
+    mine: function(){
+      for(let _x = 0 ; _x< 9007199254740991 ; _x++ ){
+        this._block = this._block.set('nonce', _x);
+        let _hash = Hashify(this._block);
+        this._block = this._block.set('hash', _hash );
+        if(_hash.substring(0, 4) === '0000') break;
+      }      
+    },
+
+    validate: function(){
+      return this._block.get('hash').substring(0, 4) === '0000';
     }
   }
    

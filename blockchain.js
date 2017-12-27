@@ -3,9 +3,12 @@ var LinkedList = require('dbly-linked-list');
 
 (function () {
 
+
   function BlockChain(){
     this._chain = new LinkedList();
-    this._chain.insert(new Block("Genesis Block"));
+    let _tempBlock = new Block("Genesis Block");
+    _tempBlock.mine();
+    this._chain.insert(_tempBlock);
   };
 
   BlockChain.prototype = {
@@ -14,6 +17,7 @@ var LinkedList = require('dbly-linked-list');
                             .getData()
                             .getHash();
       var temp = new Block(data, prevHash);
+      temp.mine();
       this._chain.insert(temp);
     },
 
