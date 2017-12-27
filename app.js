@@ -1,4 +1,4 @@
-const BlockChain = require('./blockchain.js');
+const BlockChain = require('./model/blockchain.js');
 
 const blockchain = new BlockChain();
 blockchain.addBlock("Send 1 BTC to Nithin")
