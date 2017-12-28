@@ -1,54 +1,51 @@
-const { Map }  = require('immutable');
 const crypto   = require('crypto');
 
 (function(){
 
-  function Hashify(obj){
-    const headers = [
-      obj.get('prevBlockHash'),
-      obj.get('data'),
-      obj.get('timeStamp'),
-      obj.get('nonce'),
-    ].join();
-
+  function hashify(headers){
     return crypto.createHmac('sha256', headers).digest('hex')
   };
 
-  function Block(data, prevBlockHash=""){
-    this._block = Map({
-      "timeStamp"    : String( new Date() ),
-      "prevBlockHash": String(prevBlockHash),
-      "data"         : String(data),
-      "nonce"        : 0,
-    });
+  // initializer
+  function Block(data, prevBlockHash=''){
+    this.timeStamp     = data.timeStamp || String (new Date());
+    this.prevBlockHash = data.prevBlockHash || String(prevBlockHash);
+    this.data          = data.data || String(data);
+    this.nonce         = data.nonce || 0;
+    this.hash          = data.hash || null;
   };
 
   Block.prototype = {
     print: function(){
-      console.log("Data          : " + this._block.get("data"));
-      console.log("Time Stamp    : " + this._block.get("timeStamp"));
-      console.log("PrevBlockHash : " + this._block.get("prevBlockHash"));
-      console.log("Nonce         : " + this._block.get("nonce"));
-      console.log("Hash          : " + this._block.get("hash"));
+      console.log("Data          : " + this.data);
+      console.log("Time Stamp    : " + this.timeStamp);
+      console.log("PrevBlockHash : " + this.prevBlockHash);
+      console.log("Nonce         : " + this.nonce);
+      console.log("Hash          : " + this.hash);
       console.log("PoW?          : " + this.validate());
-      console.log("---------------------------------------------------------------------------------");
+      console.log("--------------------------------------------");
     },
 
     getHash: function(){
-      return this._block.get("hash");
+      return this.hash;
+    },
+
+    getPrevHash: function(){
+      return this.prevBlockHash;
     },
 
     mine: function(){
       for(let _x = 0 ; _x< 9007199254740991 ; _x++ ){
-        this._block = this._block.set('nonce', _x);
-        let _hash = Hashify(this._block);
-        this._block = this._block.set('hash', _hash );
-        if(_hash.substring(0, 4) === '0000') break;
+        this.nonce = _x;
+        let _hash = hashify('' + this.timeStamp + 
+                    this.prevBlockHash + this.data + this.nonce);
+        this.hash = _hash;
+        if(this.validate()) break;
       }      
     },
 
     validate: function(){
-      return this._block.get('hash').substring(0, 4) === '0000';
+      return this.hash.substring(0, 4) === '0000';
     }
   }
    

@@ -1,6 +1,21 @@
 const BlockChain = require('./model/blockchain.js');
+const async      = require('async');
 
-const blockchain = new BlockChain();
-blockchain.addBlock("Send 1 BTC to Nithin")
-blockchain.addBlock("Send 2 BTC to Nithin")
-blockchain.print();
+let blockchain;
+async.series([
+  function(callback){
+    blockchain = new BlockChain(callback);
+  },
+  function(callback){
+    //blockchain.addBlock("Send 1 BTC to Satoshi", callback);
+    callback(null);
+  },
+  function(callback){
+    //blockchain.addBlock("Purchase coffee for 0.007", callback)
+    callback(null);
+  },
+  function(callback){
+    blockchain.print(callback)},
+],function(err){
+  console.log(err);
+});
