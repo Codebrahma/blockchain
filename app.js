@@ -1,21 +1,38 @@
-const BlockChain = require('./model/blockchain.js');
-const async      = require('async');
+#!/usr/bin/env node
 
-let blockchain;
+const async      = require('async');
+const program = require('commander');
+const BlockChain = require('./model/blockchain.js');
+
+let blockchain; 
 async.series([
   function(callback){
     blockchain = new BlockChain(callback);
   },
   function(callback){
-    //blockchain.addBlock("Send 1 BTC to Satoshi", callback);
-    callback(null);
-  },
-  function(callback){
-    //blockchain.addBlock("Purchase coffee for 0.007", callback)
-    callback(null);
-  },
-  function(callback){
-    blockchain.print(callback)},
+    initializeCLI(callback);
+  }
 ],function(err){
   console.log(err);
 });
+
+
+    
+function initializeCLI(callback){
+  program
+    .version('0.0.1')
+    .command('print')
+    .description('print the blockchain')
+    .action(function(req,optional){
+      blockchain.print(callback);
+    });
+
+    program
+      .command('add <data>')
+      .description('add a blockchain')
+      .action((data) => {
+        blockchain.addBlock(data, callback);
+      });
+
+    program.parse(process.argv)
+}

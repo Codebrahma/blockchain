@@ -19,6 +19,7 @@
   "homepage": "https://github.com/Codebrahma/blockchain#readme",
   "dependencies": {
     "async": "^2.6.0",
+    "commander": "^2.12.2",
     "crypto": "^1.0.1",
     "scattered-store": "^1.0.0"
   }
