@@ -42,9 +42,9 @@ const LinkedList = require('dbly-linked-list');
       return this._chain.$append(block.mine());
     },
 
-    $print: function(){
+    $print: function(verbose){
       // iterate through the chain and print each block
-      return this._chain.$forEach(function(l){ l.print(); });
+      return this._chain.$forEach(function(l){ l.print(verbose); });
     },
   };
 

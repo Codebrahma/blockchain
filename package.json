@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/Codebrahma/blockchain#readme",
   "dependencies": {
+    "commander": "^2.12.2",
     "crypto": "^1.0.1",
     "dbly-linked-list": "^0.2.0",
     "deferred": "^0.7.9",

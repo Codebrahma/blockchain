@@ -62,14 +62,23 @@ const crypto   = require('crypto');
       return this._block.toObject();
     },
 
-    print: function(){
-      console.log("Data          : " + this._block.get("data"));
-      console.log("Time Stamp    : " + this._block.get("timeStamp"));
-      console.log("PrevBlockHash : " + this._block.get("prevBlockHash"));
-      console.log("Nonce         : " + this._block.get("nonce"));
-      console.log("Hash          : " + this._block.get("hash"));
-      console.log("PoW?          : " + this.validate());
-      console.log("---------------------------------------------------------------------------------");
+    print: function(verbose){
+
+      if(verbose){
+        console.log("Data          : " + this._block.get("data"));
+        console.log("Time Stamp    : " + this._block.get("timeStamp"));
+        console.log("PrevBlockHash : " + this._block.get("prevBlockHash"));
+        console.log("Nonce         : " + this._block.get("nonce"));
+        console.log("Hash          : " + this._block.get("hash"));
+        console.log("PoW?          : " + this.validate());
+        console.log("---------------------------------------------------------------------------------");
+      } else {
+        console.log("Data          : " + this._block.get("data"));
+        console.log("Hash          : " + this._block.get("hash"));
+        console.log("PrevBlockHash : " + this._block.get("prevBlockHash"));
+        console.log("---------------------------------------------------------------------------------");
+      };
+
     },
 
   };
