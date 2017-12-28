@@ -3,27 +3,61 @@ const crypto   = require('crypto');
 
 (function(){
 
+  let MAX_NONCE = 9223372036854776000; // MaxInt64 = 2^63 - 1
+
   function Hashify(obj){
     const headers = [
       obj.get('prevBlockHash'),
       obj.get('data'),
       obj.get('timeStamp'),
       obj.get('nonce'),
+      obj.get('difficulty'),
     ].join();
 
     return crypto.createHmac('sha256', headers).digest('hex')
   };
 
-  function Block(data, prevBlockHash=""){
+  function Block(data, prevBlockHash="", difficulty=4, nonce=0, timeStamp=(new Date()), hash=""){
     this._block = Map({
-      "timeStamp"    : String( new Date() ),
       "prevBlockHash": String(prevBlockHash),
       "data"         : String(data),
-      "nonce"        : 0,
+      "timeStamp"    : String(timeStamp),
+      "nonce"        : nonce,
+      "difficulty"   : difficulty,
+      "hash"         : hash,
     });
   };
+ 
 
+  // Instance methods
   Block.prototype = {
+
+    getHash: function(){
+      return this._block.get("hash");
+    },
+
+    getPrevHash: function(){
+      return this._block.get("prevBlockHash");
+    },
+
+    mine: function(){
+      for(let _nonce = 0 ; _nonce < MAX_NONCE && !this.validate(); _nonce++){
+        this._block = this._block.set("nonce", _nonce);
+      };
+      return this;
+    },
+
+    validate: function(){
+      let _hash   = Hashify(this._block);
+      let d       = this._block.get("difficulty");
+      this._block = this._block.set("hash", _hash);
+      return _hash.substring(0, d) === '0'.repeat(d);
+    },
+
+    serialize: function(){
+      return this._block.toObject();
+    },
+
     print: function(){
       console.log("Data          : " + this._block.get("data"));
       console.log("Time Stamp    : " + this._block.get("timeStamp"));
@@ -34,24 +68,19 @@ const crypto   = require('crypto');
       console.log("---------------------------------------------------------------------------------");
     },
 
-    getHash: function(){
-      return this._block.get("hash");
-    },
+  };
 
-    mine: function(){
-      for(let _x = 0 ; _x< 9007199254740991 ; _x++ ){
-        this._block = this._block.set('nonce', _x);
-        let _hash = Hashify(this._block);
-        this._block = this._block.set('hash', _hash );
-        if(_hash.substring(0, 4) === '0000') break;
-      }      
-    },
+  // Class methods
+  Block.deserialize = function(_b){
+    return new Block(
+      _b["data"],
+      _b["prevBlockHash"],
+      _b["difficulty"],
+      _b["nonce"],
+      _b["timeStamp"],
+      _b["hash"]);
+  };
 
-    validate: function(){
-      return this._block.get('hash').substring(0, 4) === '0000';
-    }
-  }
-   
   module.exports = Block;
 
 }());
