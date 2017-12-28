@@ -73,10 +73,8 @@ const crypto   = require('crypto');
         console.log("PoW?          : " + this.validate());
         console.log("---------------------------------------------------------------------------------");
       } else {
-        console.log("Data          : " + this._block.get("data"));
-        console.log("Hash          : " + this._block.get("hash"));
-        console.log("PrevBlockHash : " + this._block.get("prevBlockHash"));
-        console.log("---------------------------------------------------------------------------------");
+        process.stdout.write(this._block.get("data"));
+        this.getPrevHash() ? process.stdout.write(" => ") : process.stdout.write(" ||\n");
       };
 
     },
