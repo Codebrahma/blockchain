@@ -36,6 +36,10 @@ const crypto   = require('crypto');
       return this._block.get("hash");
     },
 
+    hashify: function(){
+      return Hashify(this._block);
+    },
+
     getPrevHash: function(){
       return this._block.get("prevBlockHash");
     },
@@ -44,13 +48,13 @@ const crypto   = require('crypto');
       for(let _nonce = 0 ; _nonce < MAX_NONCE && !this.validate(); _nonce++){
         this._block = this._block.set("nonce", _nonce);
       };
+      this._block = this._block.set("hash", this.hashify());
       return this;
     },
 
     validate: function(){
-      let _hash   = Hashify(this._block);
-      let d       = this._block.get("difficulty");
-      this._block = this._block.set("hash", _hash);
+      let _hash   = this.hashify();
+      let d       = this._block.get("difficulty");;
       return _hash.substring(0, d) === '0'.repeat(d);
     },
 
