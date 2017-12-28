@@ -3,16 +3,16 @@ const BlockChain = require('./model/blockchain.js');
 const blockchain = new BlockChain();
 
 
-blockchain.init()
+blockchain.$init()
 
   .then(function(){
     console.log("Block initialized")
-    return blockchain.addBlock("Send 1 BTC to Nithin");
+    return blockchain.$addBlock("Send 1 BTC to Nithin");
   })
 
   .then(function(){
     console.log("Sent money")
-    return blockchain.print()
+    return blockchain.$print()
   })
 
   .then(function(){
