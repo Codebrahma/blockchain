@@ -103,7 +103,8 @@ const DB_PATH = process.env.DB_PATH;
       return getLastBlockRef().then(fetchLastBlock);
     },
 
-    $forEach: function(fn){
+    // TODO: write a seperate reduce function
+    $forEach: function(fn, res=[]){
       var def = deferred();
       
       var fetchLast = function(){
@@ -112,16 +113,16 @@ const DB_PATH = process.env.DB_PATH;
 
       var iterateOverChain = function(block){
         // Execute callback on the block
-        fn(block);
+        res.push(fn(block));
         // Get prev_hash property from the block
         let prev  = block.getPrevHash();
         // Resolve function once we've traversed to the end 
-        if(prev == "") return def.resolve();
+        if(prev == "") return def.resolve(res);
         // If not fetch the previous block
-        this.$fetch(prev).then(iterateOverChain);
+        this.$fetch(prev).then(iterateOverChain, def.reject);
       }.bind(this);
 
-      fetchLast().then(iterateOverChain);
+      fetchLast().then(iterateOverChain, def.reject);
 
       return def.promise;
     },

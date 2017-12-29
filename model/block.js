@@ -7,19 +7,19 @@ const Crypto  = require('../util/crypto.js');
 
   function Block(transactions=[], prevBlockHash="", difficulty=4, nonce=0, timeStamp=(new Date()), hash=""){
     this._block = { };
-    this._block["transactions"] = transactions;
-    this._block["prevBlockHash"]= prevBlockHash;
-    this._block["difficulty"]   = difficulty;
-    this._block["nonce"]        = nonce;
-    this._block["timeStamp"]    = String(timeStamp);
-    this._block["hash"]         = hash;
+    this._block.transactions = transactions;
+    this._block.prevBlockHash= prevBlockHash;
+    this._block.difficulty   = difficulty;
+    this._block.nonce        = nonce;
+    this._block.timeStamp    = String(timeStamp);
+    this._block.hash         = hash;
   };
  
   // Instance methods
   Block.prototype = {
 
     getHash: function(){
-      return this._block["hash"];
+      return this._block.hash;
     },
 
     hashify: function(){
@@ -39,21 +39,32 @@ const Crypto  = require('../util/crypto.js');
       return Crypto.hashify(headerStr);
     },
 
-    getPrevHash: function(){
-      return this._block["prevBlockHash"];
+    getTransactions: function(){
+      return this._block.transactions;
     },
 
-    mine: function(){
+    getPrevHash: function(){
+      return this._block.prevBlockHash;
+    },
+
+    appendTx: function(tx){
+      this._block.transactions.push(tx);
+    },
+
+    mine: function(coinbaseTx){
+      if(coinbaseTx)
+        this.appendTx(coinbaseTx);
+
       for(let _nonce = 0 ; _nonce < MAX_NONCE && !this.validate(); _nonce++){
-        this._block["nonce"] = _nonce;
+        this._block.nonce = _nonce;
       };
-      this._block["hash"] = this.hashify();
+      this._block.hash = this.hashify();
       return this;
     },
 
     validate: function(){
       let _hash   = this.hashify();
-      let d       = this._block["difficulty"];
+      let d       = this._block.difficulty;
       return _hash.substring(0, d) === '0'.repeat(d);
     },
 
@@ -63,20 +74,18 @@ const Crypto  = require('../util/crypto.js');
 
     print: function(verbose){
       if(verbose){
-        console.log("Hash          : " + this._block["hash"]);
-        console.log("Transactions  : " + this._block["transactions"]);
-        console.log("PrevBlockHash : " + this._block["prevBlockHash"]);
-        console.log("Nonce         : " + this._block["nonce"]);
-        console.log("Difficulty    : " + this._block["difficulty"]);
-        console.log("Time Stamp    : " + this._block["timeStamp"]);
+        console.log("Hash          : " + this._block.hash);
+        console.log("Transactions  : " + JSON.stringify(this._block.transactions));
+        console.log("PrevBlockHash : " + this._block.prevBlockHash);
+        console.log("Nonce         : " + this._block.nonce);
+        console.log("Difficulty    : " + this._block.difficulty);
+        console.log("Time Stamp    : " + this._block.timeStamp);
         console.log("PoW?          : " + this.validate());
         console.log("---------------------------------------------------------------------------------");
       } else {
-        process.stdout.write(this._block["transactions"]);
-        this.getPrevHash() ? process.stdout.write(" => ") : process.stdout.write(" ||\n");
+        process.stdout.write(JSON.stringify(this._block.transactions));
+        this.getPrevHash() ? process.stdout.write(" =>\n") : process.stdout.write(" ||\n");
       };
-
-      console.log("PRINTING")
     },
 
   };

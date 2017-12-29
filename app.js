@@ -7,7 +7,20 @@
 const BlockChain = require('./model/blockchain.js');
 const program    = require('commander');
 
+function exception(msg){
+  return function(e){
+    console.log(msg);
+    console.error(e);
+    console.trace();
+  };
+};
+function success(msg){
+  return function(){ console.log(msg); };
+};
+
 function initializeCLI(){
+  console.log("INITIALIZING CLI");
+
   program
     .version('0.0.1')
 
@@ -16,7 +29,8 @@ function initializeCLI(){
     .description('print the blockchain')
     .option('-v, --verbose [va]', 'Verbose printing true?')
     .action(function(req, options){
-      blockchain.$print(options.verbose);
+      blockchain.$print(options.verbose)
+        .then(success("SUCCESS Chain Print"),exception("FAILED Chain Print"));
     });
 
   program
@@ -31,11 +45,21 @@ function initializeCLI(){
         to     : req.to,
         amount : req.amount,
       };
-      blockchain.$addBlock( JSON.stringify(data) );
+      blockchain.$addBlock( data ).then(success("SUCCESS Add Block"), exception("FAILED Add Block"));
     });
+
+  program
+    .command('balance [options]')
+    .description('balance of the address')
+    .option('-a, --address [address]', 'balance of?')
+    .action((req, options) => {
+      blockchain.$getBalance(options.address)
+        .then(success("SUCCESS Balance retrived"), exception("FAILED balance"));
+    });
+
 
   program.parse(process.argv);
 };
 
 const blockchain = new BlockChain();
-blockchain.$init().then(initializeCLI);
+blockchain.$init().then(initializeCLI, exception("FAILED TO Initialize CLI"));
