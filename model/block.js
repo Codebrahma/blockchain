@@ -1,14 +1,13 @@
 const _       = require('underscore');
 const Crypto  = require('../util/crypto.js');
-const Util    = require('../util/bc_util.js');
 
 (function(){
 
   let MAX_NONCE = 9223372036854776000; // MaxInt64 = 2^63 - 1
 
-  function Block(data, prevBlockHash="", difficulty=4, nonce=0, timeStamp=(new Date()), hash=""){
+  function Block(transactions=[], prevBlockHash="", difficulty=4, nonce=0, timeStamp=(new Date()), hash=""){
     this._block = { };
-    this._block["data"]         = Util.cleanData(data);
+    this._block["transactions"] = transactions;
     this._block["prevBlockHash"]= prevBlockHash;
     this._block["difficulty"]   = difficulty;
     this._block["nonce"]        = nonce;
@@ -26,7 +25,7 @@ const Util    = require('../util/bc_util.js');
     hashify: function(){
       const headers = [
         'prevBlockHash',
-        'data',
+        'transactions',
         'timeStamp',
         'nonce',
         'difficulty',
@@ -65,7 +64,7 @@ const Util    = require('../util/bc_util.js');
 
       if(verbose){
         console.log("Hash          : " + this._block["hash"]);
-        console.log("Data          : " + this._block["data"]);
+        console.log("Transactions  : " + this._block["transactions"]);
         console.log("PrevBlockHash : " + this._block["prevBlockHash"]);
         console.log("Nonce         : " + this._block["nonce"]);
         console.log("Difficulty    : " + this._block["difficulty"]);
