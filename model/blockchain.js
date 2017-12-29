@@ -22,9 +22,11 @@ const Transaction  = require('./transaction.js').Transaction;
         // Do nothing if chain exists ( ie, not empty )
         if(!empty) return;
         // Create genesis block
-        let _gBlock = new Block();
+        let cbTx = this.newCoinbaseTx();
+        let _gBlock = new Block(transactions = [cbTx]);
+        _gBlock.mine();
         // append block to the block chain
-        return this.$append(_gBlock);
+        return this._chain.$append(_gBlock);
       }.bind(this);
 
       return this._chain.$isEmpty().then(initChain);
@@ -36,18 +38,12 @@ const Transaction  = require('./transaction.js').Transaction;
         var newT = self.$newUTXOTransaction(data.from, data.to, data.amount);
         return newT.then(function(tx){
           var temp = new Block([tx], prevBlock.getHash());
+          temp.mine();
           // append block to the block chain
-          return self.$append(temp);
+          return self._chain.$append(temp);
         });
       };
       return this._chain.$fetchLast().then(newUtxTx);
-    },
-
-    $append: function(block){
-      // add coinbase tx while mining
-      let cbTx = this.newCoinbaseTx();
-      // append block to the block chain after consensus
-      return this._chain.$append(block.mine(cbTx));
     },
 
     $print: function(verbose){
@@ -115,18 +111,18 @@ const Transaction  = require('./transaction.js').Transaction;
     },
 
     $findUTX: function(owner){
-      let unspentTXs = [ ];
-      let spentTXOs  = { };
+      let spentTXOs  = {};
 
-      var accUTX = this._chain.$forEach(function(block){
+      var UTX = this._chain.$forEach(function(block){
+        let unspentTXs = [];
         // interating through all transactions in a blokck
         _.each(block.getTransactions(), (tx,tx_idx)=>{
           // for each output in the transaction
           _.each(tx.outputs, function(output, opt_idx){
             // check if that output is already spent
-            let transactionSpent = (spentTXOs[tx.txId]) && _.includes(spentTXOs[tx.txId], opt_idx);
+            let transactionSpent = ((spentTXOs[tx.txId]) && _.includes(spentTXOs[tx.txId], opt_idx));
             
-            let belongsToOwner   = (output.publicKey == owner);
+            let belongsToOwner   = (output.publicKey === owner);
             if( !transactionSpent && belongsToOwner ){
               unspentTXs.push(tx);
             };
@@ -140,10 +136,9 @@ const Transaction  = require('./transaction.js').Transaction;
             }
           });
         });
-        return(unspentTXs);
+        return unspentTXs;
       });
-
-      return accUTX.then(_.flatten);
+      return UTX.then(_.flatten);
     },
 
     $getBalance: function(owner) {

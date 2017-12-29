@@ -51,10 +51,7 @@ const Crypto  = require('../util/crypto.js');
       this._block.transactions.push(tx);
     },
 
-    mine: function(coinbaseTx){
-      if(coinbaseTx)
-        this.appendTx(coinbaseTx);
-
+    mine: function(){
       for(let _nonce = 0 ; _nonce < MAX_NONCE && !this.validate(); _nonce++){
         this._block.nonce = _nonce;
       };
