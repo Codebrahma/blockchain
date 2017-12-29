@@ -1,7 +1,5 @@
 const DB         = require('./db.js');
 const Block      = require('./block.js');
-const LinkedList = require('dbly-linked-list');
-
 
 (function(){
 
