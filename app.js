@@ -54,7 +54,9 @@ function initializeCLI(){
     .option('-a, --address [address]', 'balance of?')
     .action((req, options) => {
       blockchain.$getBalance(options.address)
-        .then(success("SUCCESS Balance retrived"), exception("FAILED balance"));
+        .then(function(b){
+          console.log("BALANCE of " + options.address + " is " + b);
+        }, exception("FAILED balance"));
     });
 
 

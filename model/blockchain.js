@@ -34,14 +34,11 @@ const Transaction  = require('./transaction.js').Transaction;
       var self = this;
       var newUtxTx = function(prevBlock){
         var newT = self.$newUTXOTransaction(data.from, data.to, data.amount);
-        newT.then(function(tx){
-          console.log("------------------");
-          console.log(tx)
-          var temp = new Block({transactions: [tx]}, prevBlock.getHash());
+        return newT.then(function(tx){
+          var temp = new Block([tx], prevBlock.getHash());
           // append block to the block chain
           return self.$append(temp);
         });
-        return newT;
       };
       return this._chain.$fetchLast().then(newUtxTx);
     },
@@ -71,27 +68,29 @@ const Transaction  = require('./transaction.js').Transaction;
       var inputs = [];
       var outputs = [];
       var sepndableOps = this.$findSpendableOutputs(from, amount);
-      sepndableOps.then((total_validOutput=>{
+      
+      return sepndableOps.then(function(total_validOutput){
+
         if(total_validOutput.total < amount) {
           return 'Not enough funds';
         }
 
         _.each(total_validOutput.validOutput, function(output){
-          var input = new Input(output.TxID, output.idx, from);
+          var input = new TxInput(output.TxID, output.idx, from);
           inputs.push(input)
         }); 
 
 
-        outputs.push(new Output(amount, to));
+        outputs.push(new TxOutput(amount, to));
         if(total_validOutput.total > amount){
-          outputs.push(new Output(total_validOutput.total - amount, from));
+          outputs.push(new TxOutput(total_validOutput.total - amount, from));
         }
 
         var t =  new Transaction(null, inputs, outputs);
         t.setId();
         return t;
-      }));
-      return sepndableOps;
+
+      });
     },
 
 
@@ -99,10 +98,10 @@ const Transaction  = require('./transaction.js').Transaction;
       var unspentOutputs = [];
       var total = 0;
       var utx = this.$findUTX(from);
-      utx.then(function(unspentTXs){
+      
+      return utx.then(function(unspentTXs){
         _.each(unspentTXs, function(tx){
           var tx_id = tx.txId;
-          
           _.each(tx.outputs, (output, id)=>{
             //TODO abstract this to output class
             if(output.publicKey == from && total < amount) {
@@ -113,7 +112,6 @@ const Transaction  = require('./transaction.js').Transaction;
         });
         return {total: total, validOutput: unspentOutputs};
       });
-      return utx;
     },
 
     $findUTX: function(owner){
@@ -158,7 +156,7 @@ const Transaction  = require('./transaction.js').Transaction;
             }
           });
         });
-        console.log("Balance of Mr." + owner + " is " + balance);
+        return balance;
       });
     },
 
