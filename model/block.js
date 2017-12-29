@@ -1,6 +1,6 @@
 const _       = require('underscore');
-const Crypto  = require('./util/crypto.js');
-const Util    = require('./util/bc_util.js');
+const Crypto  = require('../util/crypto.js');
+const Util    = require('../util/bc_util.js');
 
 (function(){
 
