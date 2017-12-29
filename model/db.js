@@ -1,4 +1,4 @@
-var deferred  = require('deferred');
+var deferred    = require('deferred');
 
 const levelup   = require('levelup');
 const leveldown = require('leveldown');
