@@ -31,8 +31,9 @@ const Crypto  = require('../util/crypto.js');
         'difficulty',
       ];
 
+      let _block    = this._block;
       let headerStr = _.chain(headers).sort()
-                       .map(function(v){ return this._block[v] })
+                       .map(function(v){ return _block[v] })
                        .value().join();
 
       return Crypto.hashify(headerStr);
@@ -61,7 +62,6 @@ const Crypto  = require('../util/crypto.js');
     },
 
     print: function(verbose){
-
       if(verbose){
         console.log("Hash          : " + this._block["hash"]);
         console.log("Transactions  : " + this._block["transactions"]);
@@ -72,10 +72,11 @@ const Crypto  = require('../util/crypto.js');
         console.log("PoW?          : " + this.validate());
         console.log("---------------------------------------------------------------------------------");
       } else {
-        process.stdout.write(this._block["data"]);
+        process.stdout.write(this._block["transactions"]);
         this.getPrevHash() ? process.stdout.write(" => ") : process.stdout.write(" ||\n");
       };
 
+      console.log("PRINTING")
     },
 
   };
@@ -83,7 +84,7 @@ const Crypto  = require('../util/crypto.js');
   // Class methods
   Block.deserialize = function(_b){
     return new Block(
-      _b["data"],
+      _b["transactions"],
       _b["prevBlockHash"],
       _b["difficulty"],
       _b["nonce"],
