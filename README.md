@@ -14,4 +14,9 @@ Environment variable `DB_PATH` points to the database.
 
 Lev for DB CLI : https://github.com/0x00A/lev
 
+# Testing
 
+```
+# to run test
+npm test
+```
