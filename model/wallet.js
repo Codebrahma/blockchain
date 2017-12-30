@@ -1,4 +1,5 @@
 var EC = require('elliptic').ec;
+// need to change this as it breaks too often
 // Create and initialize EC context
 // (better do it once and reuse it)
 var ec = new EC('secp256k1');
@@ -22,7 +23,10 @@ var ec = new EC('secp256k1');
   }
   Elliptic.verify = function(pubKey, msg, signature){
     var key = ec.keyFromPublic(pubKey,'hex');
-    return key.verify(msg, signature);
+    console.log('1');
+    var x =  key.verify(msg, signature);
+    console.log('2');
+    return x;
   };
   Elliptic.sign = function(pvtKey, msg){
     var key = ec.keyFromPrivate(pvtKey);

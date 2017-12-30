@@ -1,5 +1,7 @@
 const Crypto  = require('../util/crypto.js');
 const _       = require('underscore');
+_.mixin(require('underscore.deepclone'));
+
 
 (function(){
   
@@ -37,6 +39,20 @@ const _       = require('underscore');
   Transaction.prototype = {
     setId : function(){
       this.txId = Crypto.hashify(JSON.stringify(this.inputs) + JSON.stringify(this.outputs));
+    },
+    sign: function(pvtKey){
+      let txCopy = _.deepClone(this);
+      txCopy     = new Transaction(null, txCopy.inputs, txCopy.outputs)
+      _.each(txCopy.inputs, (inp)=>{
+        inp.publicKey=null;
+        inp.signature=null;
+      });
+      _.each(txCopy.inputs, (inp, idx)=>{
+        inp.publicKey = this.inputs[idx].publicKey;
+        txCopy.setId();
+        this.inputs[idx].signature = txCopy.txId;
+        inp.publicKey = null;
+      });
     }
   };
   Transaction.deserialize = function(tx) {

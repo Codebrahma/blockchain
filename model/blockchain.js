@@ -85,9 +85,7 @@ const Elliptic     = require('./wallet.js').Elliptic;
         }
 
         _.each(total_validOutput.validOutput, function(output){
-          var data  = output.TxID + output.idx + from + to + amount;
-          var signature = Elliptic.sign(pvtKey, data);
-          var input = new TxInput(output.TxID, output.idx, signature , from);
+          var input = new TxInput(output.TxID, output.idx, null , from);
           inputs.push(input)
         }); 
 
@@ -99,6 +97,7 @@ const Elliptic     = require('./wallet.js').Elliptic;
 
         var t =  new Transaction(null, inputs, outputs);
         t.setId();
+        t.sign(pvtKey);
         return t;
 
       });
