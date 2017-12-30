@@ -7,6 +7,7 @@ const TxInput      = require('./transaction.js').TxInput;
 const TxOutput     = require('./transaction.js').TxOutput;
 const Transaction  = require('./transaction.js').Transaction;
 
+const Elliptic     = require('./wallet.js').Elliptic;
 
 (function(){
 
@@ -34,8 +35,9 @@ const Transaction  = require('./transaction.js').Transaction;
 
     $addBlock: function(data){
       var self = this;
-      var newUtxTx = function(prevBlock){
-        var newT = self.$newUTXOTransaction(data.from, data.to, data.amount);
+      var newUtxTx = function(prevBlock, pvtKey){
+
+        var newT = self.$newUTXOTransaction(data.from, data.to, data.amount, pvtKey);
         return newT.then(function(tx){
           //TODO remove the throw and make it fails nice
           if (tx == 'Not enough funds') throw("Not enough funds");
@@ -44,8 +46,17 @@ const Transaction  = require('./transaction.js').Transaction;
           // append block to the block chain
           return self._chain.$append(temp);
         });
+
       };
-      return this._chain.$fetchLast().then(newUtxTx);
+
+      var getPrivKey = function(pubkey){
+        return self._chain.$get('key_' + pubkey);
+      }
+      return this._chain.$fetchLast().then((prevBlock)=> {
+        getPrivKey(data.from).then((privkey)=>{
+          newUtxTx(prevBlock, privkey);
+        });
+      });
     },
 
     $print: function(verbose){
@@ -62,7 +73,7 @@ const Transaction  = require('./transaction.js').Transaction;
       return tx;
     },
 
-    $newUTXOTransaction: function(from, to, amount){
+    $newUTXOTransaction: function(from, to, amount, pvtKey){
       var inputs = [];
       var outputs = [];
       var sepndableOps = this.$findSpendableOutputs(from, amount);
@@ -74,7 +85,10 @@ const Transaction  = require('./transaction.js').Transaction;
         }
 
         _.each(total_validOutput.validOutput, function(output){
-          var input = new TxInput(output.TxID, output.idx, null , from);
+          var data  = output.TxId + output.idx + from + to + amount;
+          var signature = Elliptic.sign(pvtKey, data);
+          console.log(signature);
+          var input = new TxInput(output.TxID, output.idx, signature , from);
           inputs.push(input)
         }); 
 
