@@ -142,7 +142,7 @@ const Transaction  = require('./transaction.js').Transaction;
     },
 
     $getBalance: function(owner) {
-      let balance = 0;
+      let balance = 0.0;
       return this.$findUTX(owner).then((unspentTX)=>{
         _.each(unspentTX, (tx, tx_idx)=>{
           _.each(tx.outputs, (output, opt_idx)=>{
