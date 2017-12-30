@@ -21,6 +21,7 @@
     "commander": "^2.12.2",
     "crypto": "^1.0.1",
     "deferred": "^0.7.9",
+    "elliptic": "^6.4.0",
     "encoding-down": "^3.0.1",
     "leveldown": "^2.1.1",
     "levelup": "^2.0.1",
