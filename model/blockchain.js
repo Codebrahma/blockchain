@@ -55,7 +55,7 @@ const Transaction  = require('./transaction.js').Transaction;
 
     /// Transaction methods
     newCoinbaseTx: function(to="codeanand", data="Reward to "+to){
-      let input  = new TxInput(null, -1, data);
+      let input  = new TxInput(null, -1, null ,data);
       let output = new TxOutput(this.subsidy, to);
       let tx     = new Transaction(null, [input], [output])
       tx.setId();
@@ -74,7 +74,7 @@ const Transaction  = require('./transaction.js').Transaction;
         }
 
         _.each(total_validOutput.validOutput, function(output){
-          var input = new TxInput(output.TxID, output.idx, from);
+          var input = new TxInput(output.TxID, output.idx, null , from);
           inputs.push(input)
         }); 
 
