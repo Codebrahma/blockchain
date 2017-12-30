@@ -1,4 +1,5 @@
 const Crypto  = require('../util/crypto.js');
+const _       = require('underscore');
 
 (function(){
   
@@ -22,7 +23,7 @@ const Crypto  = require('../util/crypto.js');
   };
   TxOutput.prototype = {
     CanBeUnlockedWith: function(unlockingData){
-      this.publicKey === unlockingData;
+      return this.publicKey === unlockingData;
     },
   };
 
@@ -37,6 +38,16 @@ const Crypto  = require('../util/crypto.js');
       this.txId = Crypto.hashify(JSON.stringify(this.inputs) + JSON.stringify(this.outputs));
     }
   };
+  Transaction.deserialize = function(tx) {
+    let x = new Transaction(tx.txId);
+    _.each(tx.inputs, (input)=> {
+      x.inputs.push(new TxInput(input.TxID, input.fromOutput, input.scriptSig));
+    });
+    _.each(tx.outputs, (output)=> {
+      x.outputs.push(new TxOutput(output.value, output.publicKey));
+    });
+    return x;
+  }
 
   // Export
   module.exports = {

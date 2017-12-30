@@ -37,6 +37,8 @@ const Transaction  = require('./transaction.js').Transaction;
       var newUtxTx = function(prevBlock){
         var newT = self.$newUTXOTransaction(data.from, data.to, data.amount);
         return newT.then(function(tx){
+          //TODO remove the throw and make it fails nice
+          if (tx == 'Not enough funds') throw("Not enough funds");
           var temp = new Block([tx], prevBlock.getHash());
           temp.mine();
           // append block to the block chain
@@ -99,8 +101,7 @@ const Transaction  = require('./transaction.js').Transaction;
         _.each(unspentTXs, function(tx){
           var tx_id = tx.txId;
           _.each(tx.outputs, (output, id)=>{
-            //TODO abstract this to output class
-            if(output.publicKey == from && total < amount) {
+            if(output.CanBeUnlockedWith(from) && total < amount) {
               total = total + parseFloat(output.value);
               unspentOutputs.push({TxID:tx_id, idx: id})
             }
@@ -129,8 +130,7 @@ const Transaction  = require('./transaction.js').Transaction;
           });
           // go to each input and add the output it references to spentTXO
           _.each(tx.inputs, (input, in_idx)=>{
-            //TODO abstract this to input class
-            if(input.scriptSig === owner){
+            if(input.CanUnlockOutput(owner)){
               if(!spentTXOs[input.TxID]) spentTXOs[input.TxID] = []
               spentTXOs[input.TxID].push(input.fromOutput)
             }

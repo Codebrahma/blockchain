@@ -1,5 +1,6 @@
 const _       = require('underscore');
 const Crypto  = require('../util/crypto.js');
+const Transaction = require('./transaction.js').Transaction;
 
 (function(){
 
@@ -89,8 +90,14 @@ const Crypto  = require('../util/crypto.js');
 
   // Class methods
   Block.deserialize = function(_b){
+    var txs = []
+    
+    _.each(_b.transactions, (tx)=> {
+      let x = Transaction.deserialize(tx);
+      txs.push(x);
+    });
     return new Block(
-      _b["transactions"],
+      txs,
       _b["prevBlockHash"],
       _b["difficulty"],
       _b["nonce"],
