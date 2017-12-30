@@ -2,6 +2,8 @@ const _       = require('underscore');
 const Crypto  = require('../util/crypto.js');
 const Transaction = require('./transaction.js').Transaction;
 
+const Elliptic     = require('./wallet.js').Elliptic;
+
 (function(){
 
   let MAX_NONCE = 9223372036854776000; // MaxInt64 = 2^63 - 1
@@ -52,7 +54,28 @@ const Transaction = require('./transaction.js').Transaction;
       this._block.transactions.push(tx);
     },
 
-    mine: function(){
+    verify: function(){
+      var what_to_return = true;
+      _.each(this.getTransactions(), (tx)=>{
+        var output_to = tx.outputs[0].publicKey;
+        var output_value = tx.outputs[0].value;
+        _.each(tx.inputs, (input)=>{
+          let hash = input.TxID + input.fromOutput  + input.publicKey +  output_to +  output_value;
+          if(!Elliptic.verify(input.publicKey, hash, input.signature)){
+            what_to_return = false;
+          }
+        });
+      })
+      return what_to_return;
+    },
+
+    mine_and_verify: function(){
+      if(!this.verify()){ 
+        //FIXME , this doesnt seem to fail the promise? gives a success console msg
+        console.log("signature mismatch"); 
+        throw "signature mismatch"; 
+        return
+      }
       for(let _nonce = 0 ; _nonce < MAX_NONCE && !this.validate(); _nonce++){
         this._block.nonce = _nonce;
       };

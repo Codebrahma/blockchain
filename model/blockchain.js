@@ -39,10 +39,10 @@ const Elliptic     = require('./wallet.js').Elliptic;
 
         var newT = self.$newUTXOTransaction(data.from, data.to, data.amount, pvtKey);
         return newT.then(function(tx){
-          //TODO remove the throw and make it fails nice
+          //FIXME throw doesnt fail the promise. gives a success console msg
           if (tx == 'Not enough funds') throw("Not enough funds");
           var temp = new Block([tx], prevBlock.getHash());
-          temp.mine();
+          temp.mine_and_verify();
           // append block to the block chain
           return self._chain.$append(temp);
         });
@@ -85,9 +85,8 @@ const Elliptic     = require('./wallet.js').Elliptic;
         }
 
         _.each(total_validOutput.validOutput, function(output){
-          var data  = output.TxId + output.idx + from + to + amount;
+          var data  = output.TxID + output.idx + from + to + amount;
           var signature = Elliptic.sign(pvtKey, data);
-          console.log(signature);
           var input = new TxInput(output.TxID, output.idx, signature , from);
           inputs.push(input)
         }); 
