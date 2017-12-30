@@ -10,6 +10,7 @@ const Transaction  = require('./transaction.js').Transaction;
 const Elliptic     = require('./wallet.js').Elliptic;
 
 (function(){
+  const BLOCKCHAIN_MINER = process.env.BLOCKCHAIN_MINER || "codeanand";
 
   function BlockChain(){
     this.subsidy = 10;
@@ -66,8 +67,8 @@ const Elliptic     = require('./wallet.js').Elliptic;
     },
 
     /// Transaction methods
-    newCoinbaseTx: function(to="codeanand", data="Reward to "+to){
-      let input  = new TxInput(null, -1, null ,data);
+    newCoinbaseTx: function(to=BLOCKCHAIN_MINER, data="Reward to "+to){
+      let input  = new TxInput(null, -1, data);
       let output = new TxOutput(this.subsidy, to);
       let tx     = new Transaction(null, [input], [output])
       tx.setId();

@@ -6,9 +6,10 @@ const Elliptic     = require('./wallet.js').Elliptic;
 
 (function(){
 
-  let MAX_NONCE = 9223372036854776000; // MaxInt64 = 2^63 - 1
+  const MAX_NONCE        = 9223372036854776000; // MaxInt64 = 2^63 - 1
+  const BLOCK_DIFFICULTY = process.env.BLOCK_DIFFICULTY || 4;
 
-  function Block(transactions=[], prevBlockHash="", difficulty=4, nonce=0, timeStamp=(new Date()), hash=""){
+  function Block(transactions=[], prevBlockHash="", difficulty=BLOCK_DIFFICULTY, nonce=0, timeStamp=(new Date()), hash=""){
     this._block = { };
     this._block.transactions = transactions;
     this._block.prevBlockHash= prevBlockHash;

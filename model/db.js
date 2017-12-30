@@ -104,12 +104,8 @@ const DB_PATH = process.env.DB_PATH;
     },
 
     // TODO: write a seperate reduce function
-    $forEach: function(fn, res=[]){
+    $forEach: function(fn=()=>{}, res=[]){
       var def = deferred();
-      
-      var fetchLast = function(){
-        return this.$fetchLast();
-      }.bind(this);
 
       var iterateOverChain = function(block){
         // Execute callback on the block
@@ -122,7 +118,7 @@ const DB_PATH = process.env.DB_PATH;
         this.$fetch(prev).then(iterateOverChain, def.reject);
       }.bind(this);
 
-      fetchLast().then(iterateOverChain, def.reject);
+      this.$fetchLast().then(iterateOverChain, def.reject);
 
       return def.promise;
     },
