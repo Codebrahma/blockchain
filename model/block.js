@@ -57,13 +57,11 @@ const Elliptic     = require('./wallet.js').Elliptic;
     verify: function(){
       let what_to_return = true;
       _.each(this.getTransactions(), (tx)=>{
-        var output_to = tx.outputs[0].publicKey;
-        var output_value = tx.outputs[0].value;
-        _.each(tx.inputs, (input)=>{
-          let hash = input.TxID + input.fromOutput  + input.publicKey +  output_to +  output_value;
-          //if(!Elliptic.verify(input.publicKey, hash, input.signature)){
-            //what_to_return = false;
-          //}
+        let results = tx.getInputSignPair();
+        _.each(tx.inputs, (input, idx)=>{
+          if(!Elliptic.verify(input.publicKey, results[idx], input.signature)){
+            what_to_return = false;
+          }
         });
       });
       return what_to_return;
@@ -73,6 +71,7 @@ const Elliptic     = require('./wallet.js').Elliptic;
       //CHANGE
       if(!this.verify()){ 
         //FIXME , this doesnt seem to fail the promise? gives a success console msg
+        console.log('jerae');
         throw "signature mismatch"; 
         return
       }
