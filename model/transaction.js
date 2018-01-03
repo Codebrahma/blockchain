@@ -66,7 +66,7 @@ _.mixin(require('underscore.deepclone'));
       _.each(txCopy.inputs, (inp, idx)=>{
         inp.publicKey = this.inputs[idx].publicKey;
         txCopy.setId();
-        result_pair.push(txCopy.txId+'a');
+        result_pair.push(txCopy.txId);
       });
       return result_pair;
     }
