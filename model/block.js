@@ -67,14 +67,13 @@ const Elliptic     = require('./wallet.js').Elliptic;
       return what_to_return;
     },
 
-    mine_and_verify: function(){
+    mine_and_verify: function(runVerify=true){
       //CHANGE
-      if(!this.verify()){ 
+      if(runVerify && !this.verify()){ 
         //FIXME , this doesnt seem to fail the promise? gives a success console msg
-        console.log('jerae');
-        throw "signature mismatch"; 
-        return
-      }
+        throw("signature mismatch");
+        return;
+      };
       for(let _nonce = 0 ; _nonce < MAX_NONCE && !this.validate(); _nonce++){
         this._block.nonce = _nonce;
       };

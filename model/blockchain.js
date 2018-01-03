@@ -25,7 +25,7 @@ const Elliptic     = require('./wallet.js').Elliptic;
         // Create genesis block
         let cbTx = this.newCoinbaseTx();
         let _gBlock = new Block(transactions = [cbTx]);
-        _gBlock.mine();
+        _gBlock.mine_and_verify(false);
         // append block to the block chain
         return this._chain.$append(_gBlock);
       }.bind(this);
@@ -51,10 +51,11 @@ const Elliptic     = require('./wallet.js').Elliptic;
 
       var getPrivKey = function(pubkey){
         return self._chain.$get('key_' + pubkey);
-      }
+      };
+
       return this._chain.$fetchLast().then((prevBlock)=> {
-        getPrivKey(data.from).then((privkey)=>{
-          newUtxTx(prevBlock, privkey);
+        return getPrivKey(data.from).then((privkey)=>{
+          return newUtxTx(prevBlock, privkey);
         });
       });
     },

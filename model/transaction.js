@@ -1,8 +1,8 @@
 const Crypto  = require('../util/crypto.js');
 const _       = require('underscore');
-_.mixin(require('underscore.deepclone'));
 const Elliptic = require('./wallet.js').Elliptic;
 
+_.mixin(require('underscore.deepclone'));
 
 (function(){
   
