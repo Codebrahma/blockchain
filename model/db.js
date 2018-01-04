@@ -1,5 +1,5 @@
 const _         = require('underscore');
-const deferred  = require('deferred');
+const Q         = require('Q');
 const levelup   = require('levelup');
 const leveldown = require('leveldown');
 const encode    = require('encoding-down');
@@ -26,7 +26,7 @@ const Block     = require('./block.js');
 
   DB.prototype = {
     $get: function(k){
-      var def = deferred();
+      var def = Q.defer();
       // Fetch element by key from DB
       this._db.get(k).then(function(v){
         return def.resolve(v);
@@ -40,7 +40,7 @@ const Block     = require('./block.js');
     },
 
     $put: function(k, v){
-      var def = deferred();
+      var def = Q.defer();
       // Set element by key,value in DB
       this._db.put(k, v)
       .then(function(){
@@ -72,7 +72,7 @@ const Block     = require('./block.js');
       return this.$get(k).then( Block.deserialize );
     },
     $isEmpty: function(){
-      var def = deferred();
+      var def = Q.defer();
       // Chain is empty if 'TIP' is not set
       this._db.get('TIP', function(error, value){
         let empty = error ? true : false;
@@ -102,17 +102,35 @@ const Block     = require('./block.js');
       }.bind(this);
       return getLastBlockRef().then(fetchLastBlock);
     },
-    // TODO: write a seperate reduce function
-    $forEach: function(fn=()=>{}, res=[]){
-      var def = deferred();
+    $reduce: function(fn=()=>{}, v){
+      var def = Q.defer();
+
+      var iterateOverChain = function(block){
+
+        // Execute callback on the block, with reduced val
+        v = fn(block, v);
+        // Get prev_hash property from the block
+        let prev  = block.getPrevHash();
+        // Resolve function with reduced value once we've traversed to the end
+        if(prev == "") return def.resolve(v);
+        // If not fetch the previous block
+        this.$fetch(prev).then(iterateOverChain, def.reject);
+      }.bind(this);
+
+      this.$fetchLast().then(iterateOverChain, def.reject);
+
+      return def.promise;
+    },
+    $forEach: function(fn=()=>{}){
+      var def = Q.defer();
 
       var iterateOverChain = function(block){
         // Execute callback on the block
-        res.push(fn(block));
+        fn(block);
         // Get prev_hash property from the block
         let prev  = block.getPrevHash();
         // Resolve function once we've traversed to the end
-        if(prev == "") return def.resolve(res);
+        if(prev == "") return def.resolve();
         // If not fetch the previous block
         this.$fetch(prev).then(iterateOverChain, def.reject);
       }.bind(this);

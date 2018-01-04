@@ -29,7 +29,6 @@ const Transaction = require('./transaction.js').Transaction;
     hashify: function(){
       const headers = [
         'prevBlockHash',
-        'transactions',
         'timeStamp',
         'nonce',
         'difficulty',
@@ -39,6 +38,7 @@ const Transaction = require('./transaction.js').Transaction;
       let headerStr = _.chain(headers).sort()
                        .map(function(v){ return _block[v] })
                        .value().join();
+      headerStr     = headerStr + JSON.stringify( this.serializeTransactions() );
 
       return Crypto.hashify(headerStr);
     },
@@ -68,18 +68,17 @@ const Transaction = require('./transaction.js').Transaction;
       return what_to_return;
     },
 
-    mine_and_verify: function(runVerify=true){
-      //CHANGE
-      if(runVerify && !this.verify()){
-        //FIXME , this doesnt seem to fail the promise? gives a success console msg
-        throw("signature mismatch");
-        return;
-      };
+    verify_and_mine: function(runVerify=true){
+      if(runVerify && !this.verify()) throw("signature mismatch");
+      this.mine();
+      return this;
+    },
+
+    mine: function(){
       for(let _nonce = 0 ; _nonce < MAX_NONCE && !this.validate(); _nonce++){
         this._block.nonce = _nonce;
       };
       this._block.hash = this.hashify();
-      return this;
     },
 
     validate: function(){
@@ -90,6 +89,10 @@ const Transaction = require('./transaction.js').Transaction;
 
     serialize: function(){
       return this._block;
+    },
+
+    serializeTransactions: function(){
+      return _.map(this._block.transactions, t => t.serialize());
     },
 
     print: function(verbose){
@@ -107,7 +110,6 @@ const Transaction = require('./transaction.js').Transaction;
         this.getPrevHash() ? process.stdout.write(" =>\n") : process.stdout.write(" ||\n");
       };
     },
-
   };
 
   // Class methods
@@ -125,6 +127,15 @@ const Transaction = require('./transaction.js').Transaction;
       _b["nonce"],
       _b["timeStamp"],
       _b["hash"]);
+  };
+
+  Block.getGenesisBlock =  function(){
+    let cbTx = Transaction.newCoinbaseTx();
+
+    let _gBlock = new Block([cbTx]);
+    _gBlock.verify_and_mine(false);
+
+    return _gBlock;
   };
 
   module.exports = Block;

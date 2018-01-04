@@ -13,10 +13,12 @@ _.mixin(require('underscore.deepclone'));
     this.signature  = signature || null;
     this.publicKey  = publicKey || null;
   };
-
   TxInput.prototype = {
     CanUnlockOutput : function(outputPubKey){
       return this.publicKey === outputPubKey;
+    },
+    serialize: function(){
+      return { TxID: this.TxID, fromOutput: this.fromOutput, signature: this.signature, publicKey: this.publicKey };
     },
   };
 
@@ -29,23 +31,24 @@ _.mixin(require('underscore.deepclone'));
     CanBeUnlockedWith: function(unlockingData){
       return this.publicKey === unlockingData;
     },
+    serialize: function(){
+      return { publicKey: this.publicKey, value: this.value};
+    },
   };
 
   // Transaction
   function Transaction(txId, inputs, outputs){
     this.txId = txId || null;
-    this.inputs = inputs || [];
-    this.outputs = outputs || [];
+    this.inputs  = _.map(inputs,  i => new TxInput(i.TxID, i.fromOutput, i.signature, i.publicKey)) || [ ];
+    this.outputs = _.map(outputs, o => new TxOutput(o.value, o.publicKey)) || [ ];
   };
   Transaction.prototype = {
     getIId: function(){
-      return Crypto.hashify(JSON.stringify(this.inputs) + JSON.stringify(this.outputs));
-    },
-    getOId: function(){
-      return Crypto.hashify(JSON.stringify(this.outputs) + JSON.stringify(this.outputs));
+      return Crypto.hashify(JSON.stringify(this.serialize()));
     },
     setId : function(){
       this.txId = this.getIId();
+      return this;
     },
     sign: function(pvtKey){
       let txCopy = _.deepClone(this);
@@ -76,24 +79,31 @@ _.mixin(require('underscore.deepclone'));
       });
       return result_pair;
     },
-    isEql : function(t){
-      return (
-        this.txId     == t.txId     &&
-        this.getIId() == t.getIId() &&
-        this.getOId() == t.getOId()
-      );
+    isEql: function(t){
+      return JSON.stringify(t) === JSON.stringify(this);
+    },
+    serialize: function(){
+      let inputs  = _.map(this.inputs,  i => i.serialize());
+      let outputs = _.map(this.outputs, o => o.serialize());
+      return { "txId": this.txId, "inputs": this.inputs, "outputs": this.outputs };
+    },
+    getOwnerBalance: function(onwer){
+      let bal = _.reduce(this.outputs, function(b,o){
+        if(o.publicKey == onwer) b=b+parseFloat(o.value);
+        return b;
+      }, 0.0);
+      return bal;
     },
   };
   Transaction.deserialize = function(tx) {
-    let x = new Transaction(tx.txId);
-    _.each(tx.inputs, (input)=> {
-      x.inputs.push(new TxInput(input.TxID, input.fromOutput, input.signature, input.publicKey));
-    });
-    _.each(tx.outputs, (output)=> {
-      x.outputs.push(new TxOutput(output.value, output.publicKey));
-    });
-    return x;
-  }
+    return new Transaction(tx.txId, tx.inputs, tx.outputs);
+  };
+  Transaction.newCoinbaseTx = function(to=process.env.BLOCKCHAIN_MINER||"codeanand", data="Reward to "+to,subsidy=process.env.SUBSIDY||10){
+    let input  = new TxInput(null, -1, data);
+    let output = new TxOutput(subsidy, to);
+    let tx     = new Transaction(null, [input], [output])
+    return tx.setId();
+  };
 
   // Export
   module.exports = {

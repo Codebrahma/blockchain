@@ -1,4 +1,6 @@
 const _       = require('underscore');
+const Q       = require('Q');
+
 const DB      = require('./db.js').ChainDB;
 const Block   = require('./block.js');
 const Wallet  = require('./wallet.js');
@@ -9,71 +11,98 @@ const Transaction  = require('./transaction.js').Transaction;
 
 (function(){
   function BlockChain(){
-    this.subsidy = 10;
     this._chain  = new DB(process.env.DB_PATH+"/chain");
     this._wallet = Wallet;
   };
 
   BlockChain.prototype = {
-
+    /*
+      Method initializes the block chain
+      does nothing if chain exists ( ie, not empty )
+      if not creates genesis block,
+        verifies and mines the block and
+        appends it to the chain
+    */
     $init: function(){
+      var self = this;
+
       var initChain = function(empty){
-        // Do nothing if chain exists ( ie, not empty )
-        if(!empty) return;
-        // Create genesis block
-        let cbTx = this.newCoinbaseTx();
-        let _gBlock = new Block(transactions = [cbTx]);
-        _gBlock.mine_and_verify(false);
+        // do nothing if chain not empty
+        if(!empty) return Q();
+
+        // create genesis block
+        let _gBlock = Block.getGenesisBlock();
+
         // append block to the block chain
-        return this._chain.$append(_gBlock);
-      }.bind(this);
+        return self._chain.$append(_gBlock);
+      };
 
       return this._chain.$isEmpty().then(initChain);
     },
 
-    $addBlock: function(data){
+    /*
+      Method adds a block to the block chain
+      INPUT: data.from [ (sender pubkey)from, (receiver pubkey)to, amount ],
+        privateKey of sender
+    */
+    $addBlock: function(data, privateKey){
       var self = this;
-      var newUtxTx = function(prevBlock, pvtKey){
-        var newT = self.$newUTXOTransaction(data.from, data.to, data.amount, pvtKey);
-        return newT.then(function(tx){
-          //FIXME throw doesnt fail the promise. gives a success console msg
-          if (tx == 'Not enough funds') throw("Not enough funds");
-          var temp = new Block([tx], prevBlock.getHash());
-          temp.mine_and_verify();
-          // append block to the block chain
-          return self._chain.$append(temp);
-        });
+
+      let prep = Q.all([
+        // Create a new transaction
+        self.$newUTXOTransaction(data, privateKey),
+
+        // Fetch block chain TIP
+        this._chain.$fetchLast(),
+      ]);
+
+      var newUtxTx = function(d){
+        let txs       = [ d[0] ];
+        let prevBlock = d[1];
+
+        // create a new block and mine
+        var temp = new Block(txs, prevBlock.getHash());
+        temp.verify_and_mine();
+
+        // append block to the block chain
+        return self._chain.$append(temp);
       };
 
-      return this._chain.$fetchLast().then((prevBlock)=> {
-        return Wallet.$fetch(data.from).then((w)=>{ return newUtxTx(prevBlock, w.privateKey) });
-      });
+      return prep.then(newUtxTx);
     },
 
+    /*
+      Method iterates through the chain and print each block
+    */
     $print: function(verbose){
-      // iterate through the chain and print each block
       return this._chain.$forEach(function(l){ l.print(verbose); });
     },
 
-    /// Transaction methods
-    newCoinbaseTx: function(to=process.env.BLOCKCHAIN_MINER||"codeanand", data="Reward to "+to){
-      let input  = new TxInput(null, -1, data);
-      let output = new TxOutput(this.subsidy, to);
-      let tx     = new Transaction(null, [input], [output])
-      tx.setId();
-      return tx;
+    /*
+      Method retrieves owner balance, summing up output values
+        from unspent transactions
+      INPUT: owner's public key
+    */
+    $getBalance: function(owner) {
+      return this.$findUTX(owner).then(unspentTX => {
+        return _.reduce(unspentTX, (b,tx) => b + tx.getOwnerBalance(owner), 0.0);
+      });
     },
 
-    $newUTXOTransaction: function(from, to, amount, pvtKey){
-      var inputs = [];
+    // PRIVATE METHODS
+    $newUTXOTransaction: function(data, pvtKey){
+      let from   = data.from;
+      let to     = data.to;
+      let amount = data.amount;
+
+      var inputs  = [];
       var outputs = [];
+
       var sepndableOps = this.$findSpendableOutputs(from, amount);
 
       return sepndableOps.then(function(total_validOutput){
 
-        if(total_validOutput.total < amount) {
-          return 'Not enough funds';
-        }
+        if(total_validOutput.total < amount) throw('Not enough funds');
 
         _.each(total_validOutput.validOutput, function(output){
           var input = new TxInput(output.TxID, output.idx, null , from);
@@ -93,7 +122,6 @@ const Transaction  = require('./transaction.js').Transaction;
 
       });
     },
-
 
     $findSpendableOutputs: function(from, amount){
       var unspentOutputs = [];
@@ -117,8 +145,8 @@ const Transaction  = require('./transaction.js').Transaction;
     $findUTX: function(owner){
       let spentTXOs  = {};
 
-      var UTX = this._chain.$forEach(function(block){
-        let unspentTXs = [];
+      return this._chain.$reduce(function(block, unspentTXs){
+
         // interating through all transactions in a blokck
         _.each(block.getTransactions(), (tx,tx_idx)=>{
           // for each output in the transaction
@@ -139,25 +167,11 @@ const Transaction  = require('./transaction.js').Transaction;
             }
           });
         });
+
         return unspentTXs;
-      });
-      return UTX.then(_.flatten);
-    },
 
-    $getBalance: function(owner) {
-      let balance = 0.0;
-      return this.$findUTX(owner).then((unspentTX)=>{
-        _.each(unspentTX, (tx, tx_idx)=>{
-          _.each(tx.outputs, (output, opt_idx)=>{
-            if(output.publicKey ==owner){
-              balance = balance + parseFloat(output.value);
-            }
-          });
-        });
-        return balance;
-      });
+      }, [ ]);
     },
-
   };
 
 
