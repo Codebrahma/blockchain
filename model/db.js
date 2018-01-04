@@ -1,5 +1,5 @@
 const _         = require('underscore');
-const deferred  = require('deferred');
+const Q         = require('Q');
 const levelup   = require('levelup');
 const leveldown = require('leveldown');
 const encode    = require('encoding-down');
@@ -26,7 +26,7 @@ const Block     = require('./block.js');
 
   DB.prototype = {
     $get: function(k){
-      var def = deferred();
+      var def = Q.defer();
       // Fetch element by key from DB
       this._db.get(k).then(function(v){
         return def.resolve(v);
@@ -40,7 +40,7 @@ const Block     = require('./block.js');
     },
 
     $put: function(k, v){
-      var def = deferred();
+      var def = Q.defer();
       // Set element by key,value in DB
       this._db.put(k, v)
       .then(function(){
@@ -72,7 +72,7 @@ const Block     = require('./block.js');
       return this.$get(k).then( Block.deserialize );
     },
     $isEmpty: function(){
-      var def = deferred();
+      var def = Q.defer();
       // Chain is empty if 'TIP' is not set
       this._db.get('TIP', function(error, value){
         let empty = error ? true : false;
@@ -104,7 +104,7 @@ const Block     = require('./block.js');
     },
     // TODO: write a seperate reduce function
     $forEach: function(fn=()=>{}, res=[]){
-      var def = deferred();
+      var def = Q.defer();
 
       var iterateOverChain = function(block){
         // Execute callback on the block
