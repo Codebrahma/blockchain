@@ -1,9 +1,9 @@
 #!/usr/bin/env node
- 
+
 /**
  * Module dependencies.
  */
- 
+
 const BlockChain = require('./model/blockchain.js');
 const Wallet     = require('./model/wallet.js');
 const program    = require('commander');
@@ -46,7 +46,11 @@ function initializeCLI(){
         to     : req.to,
         amount : req.amount,
       };
-      blockchain.$addBlock( data ).then(success("SUCCESS Add Block"), exception("FAILED Add Block"));
+
+      Wallet.$fetch(data.from).then(function(w){
+        return blockchain.$addBlock( data, w.privateKey )
+      })
+      .then(success("SUCCESS Add Block"), exception("FAILED Add Block"));
     });
 
   program

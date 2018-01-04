@@ -46,6 +46,7 @@ _.mixin(require('underscore.deepclone'));
     },
     setId : function(){
       this.txId = this.getIId();
+      return this;
     },
     sign: function(pvtKey){
       let txCopy = _.deepClone(this);
@@ -93,7 +94,14 @@ _.mixin(require('underscore.deepclone'));
       x.outputs.push(new TxOutput(output.value, output.publicKey));
     });
     return x;
-  }
+  };
+
+  Transaction.newCoinbaseTx = function(to=process.env.BLOCKCHAIN_MINER||"codeanand", data="Reward to "+to,subsidy=process.env.SUBSIDY||10){
+    let input  = new TxInput(null, -1, data);
+    let output = new TxOutput(subsidy, to);
+    let tx     = new Transaction(null, [input], [output])
+    return tx.setId();
+  };
 
   // Export
   module.exports = {

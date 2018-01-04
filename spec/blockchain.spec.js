@@ -3,6 +3,7 @@ const expect = require('chai').expect
 
 const BlockChain = require('../model/blockchain.js');
 const Wallet     = require('../model/wallet.js');
+const Transaction= require('../model/Transaction.js').Transaction;
 
 describe('BlockChain', () => {
 
@@ -10,6 +11,7 @@ describe('BlockChain', () => {
   let u2 = new Wallet();
 
   {
+    process.env.SUBSIDY          = 5;
     process.env.BLOCK_DIFFICULTY = 2;
     process.env.BLOCKCHAIN_MINER = u1.pubKey;
   };
@@ -49,7 +51,7 @@ describe('BlockChain', () => {
     });
 
     it('should contain the coinbase transaction', () => {
-      let cbtx = bc.newCoinbaseTx();
+      let cbtx = Transaction.newCoinbaseTx();
       return bc._chain.$fetchLast()
                .then(function(b){
                   let txs = b.getTransactions();
@@ -60,15 +62,15 @@ describe('BlockChain', () => {
   });
 
   describe("$transaction", () => {
-    it('should have 10 coins, initially', () => {
+    it('should have 5 coins, initially', () => {
       return bc.$getBalance(u1.pubKey)
-               .then(function(b){ expect(b).to.equal(bc.subsidy) });
+               .then(function(b){ expect(b).to.equal(5) });
     });
 
     it('should have valid blance in the end', () => {
-      return bc.$addBlock({ from: u1.pubKey, to: u2.pubKey, amount: 0.001 })
+      return bc.$addBlock({ from: u1.pubKey, to: u2.pubKey, amount: 0.001 }, u1.privateKey)
                .then(function(){ return bc.$getBalance(u1.pubKey) })
-               .then(function(b){ expect(b).to.equal(9.999) })
+               .then(function(b){ expect(b).to.equal(4.999) })
                .then(function(){ return bc.$getBalance(u2.pubKey) })
                .then(function(b){ expect(b).to.equal(0.001) });
     });
