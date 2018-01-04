@@ -3,3 +3,4 @@ db/*
 package-lock.json
 model/db/
 .vscode
+testdb/*

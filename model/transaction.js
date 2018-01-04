@@ -1,19 +1,19 @@
-const Crypto  = require('../util/crypto.js');
-const _       = require('underscore');
-const Elliptic = require('./wallet.js').Elliptic;
+const _        = require('underscore');
+const Crypto   = require('../util/crypto.js');
+const Elliptic = require('../util/elliptic.js');
 
 _.mixin(require('underscore.deepclone'));
 
 (function(){
-  
-  // Transaction input  
+
+  // Transaction input
   function TxInput(txId, fromOutput, signature, publicKey){
     this.TxID = txId || null;
     this.fromOutput = fromOutput;
     this.signature  = signature || null;
     this.publicKey  = publicKey || null;
   };
-  
+
   TxInput.prototype = {
     CanUnlockOutput : function(outputPubKey){
       return this.publicKey === outputPubKey;
@@ -38,8 +38,14 @@ _.mixin(require('underscore.deepclone'));
     this.outputs = outputs || [];
   };
   Transaction.prototype = {
+    getIId: function(){
+      return Crypto.hashify(JSON.stringify(this.inputs) + JSON.stringify(this.outputs));
+    },
+    getOId: function(){
+      return Crypto.hashify(JSON.stringify(this.outputs) + JSON.stringify(this.outputs));
+    },
     setId : function(){
-      this.txId = Crypto.hashify(JSON.stringify(this.inputs) + JSON.stringify(this.outputs));
+      this.txId = this.getIId();
     },
     sign: function(pvtKey){
       let txCopy = _.deepClone(this);
@@ -69,7 +75,14 @@ _.mixin(require('underscore.deepclone'));
         result_pair.push(txCopy.txId);
       });
       return result_pair;
-    }
+    },
+    isEql : function(t){
+      return (
+        this.txId     == t.txId     &&
+        this.getIId() == t.getIId() &&
+        this.getOId() == t.getOId()
+      );
+    },
   };
   Transaction.deserialize = function(tx) {
     let x = new Transaction(tx.txId);

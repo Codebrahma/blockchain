@@ -1,14 +1,15 @@
 const _       = require('underscore');
-const Crypto  = require('../util/crypto.js');
-const Transaction = require('./transaction.js').Transaction;
 
-const Elliptic     = require('./wallet.js').Elliptic;
+const Crypto    = require('../util/crypto.js');
+const Elliptic  = require('../util/elliptic.js');
+
+const Transaction = require('./transaction.js').Transaction;
 
 (function(){
 
-  let MAX_NONCE = 9223372036854776000; // MaxInt64 = 2^63 - 1
+  const MAX_NONCE        = 9223372036854776000; // MaxInt64 = 2^63 - 1
 
-  function Block(transactions=[], prevBlockHash="", difficulty=4, nonce=0, timeStamp=(new Date()), hash=""){
+  function Block(transactions=[], prevBlockHash="", difficulty=process.env.BLOCK_DIFFICULTY||4, nonce=0, timeStamp=(new Date()), hash=""){
     this._block = { };
     this._block.transactions = transactions;
     this._block.prevBlockHash= prevBlockHash;
@@ -17,7 +18,7 @@ const Elliptic     = require('./wallet.js').Elliptic;
     this._block.timeStamp    = String(timeStamp);
     this._block.hash         = hash;
   };
- 
+
   // Instance methods
   Block.prototype = {
 
@@ -69,7 +70,7 @@ const Elliptic     = require('./wallet.js').Elliptic;
 
     mine_and_verify: function(runVerify=true){
       //CHANGE
-      if(runVerify && !this.verify()){ 
+      if(runVerify && !this.verify()){
         //FIXME , this doesnt seem to fail the promise? gives a success console msg
         throw("signature mismatch");
         return;
@@ -112,7 +113,7 @@ const Elliptic     = require('./wallet.js').Elliptic;
   // Class methods
   Block.deserialize = function(_b){
     var txs = []
-    
+
     _.each(_b.transactions, (tx)=> {
       let x = Transaction.deserialize(tx);
       txs.push(x);
