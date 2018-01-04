@@ -117,8 +117,8 @@ const Transaction  = require('./transaction.js').Transaction;
     $findUTX: function(owner){
       let spentTXOs  = {};
 
-      var UTX = this._chain.$forEach(function(block){
-        let unspentTXs = [];
+      return this._chain.$reduce(function(block, unspentTXs){
+
         // interating through all transactions in a blokck
         _.each(block.getTransactions(), (tx,tx_idx)=>{
           // for each output in the transaction
@@ -139,9 +139,9 @@ const Transaction  = require('./transaction.js').Transaction;
             }
           });
         });
+
         return unspentTXs;
-      });
-      return UTX.then(_.flatten);
+      }, [ ]);
     },
 
     $getBalance: function(owner) {

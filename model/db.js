@@ -102,17 +102,35 @@ const Block     = require('./block.js');
       }.bind(this);
       return getLastBlockRef().then(fetchLastBlock);
     },
-    // TODO: write a seperate reduce function
-    $forEach: function(fn=()=>{}, res=[]){
+    $reduce: function(fn=()=>{}, v){
+      var def = Q.defer();
+
+      var iterateOverChain = function(block){
+
+        // Execute callback on the block, with reduced val
+        v = fn(block, v);
+        // Get prev_hash property from the block
+        let prev  = block.getPrevHash();
+        // Resolve function with reduced value once we've traversed to the end
+        if(prev == "") return def.resolve(v);
+        // If not fetch the previous block
+        this.$fetch(prev).then(iterateOverChain, def.reject);
+      }.bind(this);
+
+      this.$fetchLast().then(iterateOverChain, def.reject);
+
+      return def.promise;
+    },
+    $forEach: function(fn=()=>{}){
       var def = Q.defer();
 
       var iterateOverChain = function(block){
         // Execute callback on the block
-        res.push(fn(block));
+        fn(block);
         // Get prev_hash property from the block
         let prev  = block.getPrevHash();
         // Resolve function once we've traversed to the end
-        if(prev == "") return def.resolve(res);
+        if(prev == "") return def.resolve();
         // If not fetch the previous block
         this.$fetch(prev).then(iterateOverChain, def.reject);
       }.bind(this);

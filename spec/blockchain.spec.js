@@ -44,8 +44,8 @@ describe('BlockChain', () => {
 
     it('should create gensis block and append to the blockchian', () => {
       return bc.$init()
-               .then(function(){ return bc._chain.$forEach() })
-               .then(function(c){ expect(c.length).to.equal(1) });
+               .then(function(){ return bc._chain.$reduce( (b,x) => x+1, 0) })
+               .then(function(c){ expect(c).to.equal(1) });
     });
 
     it('should contain the coinbase transaction', () => {
