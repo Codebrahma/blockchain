@@ -169,6 +169,7 @@ const Transaction  = require('./transaction.js').Transaction;
         });
 
         return unspentTXs;
+
       }, [ ]);
     },
   };

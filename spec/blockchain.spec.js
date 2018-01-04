@@ -67,12 +67,24 @@ describe('BlockChain', () => {
                .then(function(b){ expect(b).to.equal(5) });
     });
 
-    it('should have valid blance in the end', () => {
+    it('should have valid balance if transaction is valid', () => {
       return bc.$addBlock({ from: u1.pubKey, to: u2.pubKey, amount: 0.001 }, u1.privateKey)
                .then(function(){ return bc.$getBalance(u1.pubKey) })
                .then(function(b){ expect(b).to.equal(4.999) })
                .then(function(){ return bc.$getBalance(u2.pubKey) })
                .then(function(b){ expect(b).to.equal(0.001) });
+    });
+
+    it('should throw error if wrong privKey', () => {
+      return bc.$addBlock({ from: u1.pubKey, to: u2.pubKey, amount: 0.001 }, u1.privateKey+"*")
+               .then(function(){ return bc.$getBalance(u1.pubKey) })
+               .catch(function(b){ expect(b).to.eq('signature mismatch')       })
+    });
+
+    it('should throw error if wrong sender pubKey', () => {
+      return bc.$addBlock({ from: u1.pubKey+"a", to: u2.pubKey, amount: 0.001 }, u1.privateKey)
+               .then(function(){ return bc.$getBalance(u1.pubKey) })
+               .catch(function(b){ expect(b).to.eq('Not enough funds')       })
     });
   });
 });

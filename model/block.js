@@ -69,10 +69,8 @@ const Transaction = require('./transaction.js').Transaction;
     },
 
     verify_and_mine: function(runVerify=true){
-
       if(runVerify && !this.verify()) throw("signature mismatch");
       this.mine();
-
       return this;
     },
 
