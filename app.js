@@ -5,7 +5,7 @@
  */
  
 const BlockChain = require('./model/blockchain.js');
-const Wallet     = require('./model/wallet.js').Wallet;
+const Wallet     = require('./model/wallet.js');
 const program    = require('commander');
 
 function exception(msg){
@@ -64,12 +64,10 @@ function initializeCLI(){
     .command('createWallet')
     .description('make a new wallet')
     .action((req, options) => {
-      let w = new Wallet();
-      //TODO should store in seperate bucket
-      blockchain._chain.$put('key_'+w.pubKey, w.privateKey).then(()=>{
+      new Wallet().$init().then(function(d){
         console.log("This is your public key store it safely");
-        console.log(w.pubKey);
-      });
+        console.log(d[0]);
+      }, exception("FAILED Create Wallet"));
     });
 
   program
@@ -77,10 +75,9 @@ function initializeCLI(){
     .description('make a new wallet')
     .option('-k, --key [key]', 'public key')
     .action((req, options) => {
-      console.log(options.key);
-      //TODO should store in seperate bucket
-      blockchain._chain.$get('key_'+options.key).then((x)=>{
-        console.log(x);
+      Wallet.$fetch(options.key).then(function(w){
+        console.log("Your private key is");
+        console.log(w.privateKey);
       });
     });
 

@@ -35,6 +35,6 @@
     "mocha": "^4.1.0"
   },
   "scripts": {
-    "test": "rm -rf ./testdb; DB_PATH=./testdb BLOCK_DIFFICULTY=2 BLOCKCHAIN_MINER=testminer mocha spec/*"
+    "test": "rm -rf ./testdb/*; DB_PATH=./testdb mocha spec/*"
   }
 }

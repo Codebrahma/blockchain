@@ -1,20 +1,17 @@
 const _       = require('underscore');
-
-const DB      = require('./db.js');
+const DB      = require('./db.js').ChainDB;
 const Block   = require('./block.js');
+const Wallet  = require('./wallet.js');
 
 const TxInput      = require('./transaction.js').TxInput;
 const TxOutput     = require('./transaction.js').TxOutput;
 const Transaction  = require('./transaction.js').Transaction;
 
-const Elliptic     = require('./wallet.js').Elliptic;
-
 (function(){
-  const BLOCKCHAIN_MINER = process.env.BLOCKCHAIN_MINER || "codeanand";
-
   function BlockChain(){
     this.subsidy = 10;
-    this._chain = new DB();
+    this._chain  = new DB(process.env.DB_PATH+"/chain");
+    this._wallet = Wallet;
   };
 
   BlockChain.prototype = {
@@ -37,7 +34,6 @@ const Elliptic     = require('./wallet.js').Elliptic;
     $addBlock: function(data){
       var self = this;
       var newUtxTx = function(prevBlock, pvtKey){
-
         var newT = self.$newUTXOTransaction(data.from, data.to, data.amount, pvtKey);
         return newT.then(function(tx){
           //FIXME throw doesnt fail the promise. gives a success console msg
@@ -47,17 +43,10 @@ const Elliptic     = require('./wallet.js').Elliptic;
           // append block to the block chain
           return self._chain.$append(temp);
         });
-
-      };
-
-      var getPrivKey = function(pubkey){
-        return self._chain.$get('key_' + pubkey);
       };
 
       return this._chain.$fetchLast().then((prevBlock)=> {
-        return getPrivKey(data.from).then((privkey)=>{
-          return newUtxTx(prevBlock, privkey);
-        });
+        return Wallet.$fetch(data.from).then((w)=>{ return newUtxTx(prevBlock, w.privateKey) });
       });
     },
 
@@ -67,7 +56,7 @@ const Elliptic     = require('./wallet.js').Elliptic;
     },
 
     /// Transaction methods
-    newCoinbaseTx: function(to=BLOCKCHAIN_MINER, data="Reward to "+to){
+    newCoinbaseTx: function(to=process.env.BLOCKCHAIN_MINER||"codeanand", data="Reward to "+to){
       let input  = new TxInput(null, -1, data);
       let output = new TxOutput(this.subsidy, to);
       let tx     = new Transaction(null, [input], [output])
@@ -79,7 +68,7 @@ const Elliptic     = require('./wallet.js').Elliptic;
       var inputs = [];
       var outputs = [];
       var sepndableOps = this.$findSpendableOutputs(from, amount);
-      
+
       return sepndableOps.then(function(total_validOutput){
 
         if(total_validOutput.total < amount) {
@@ -89,7 +78,7 @@ const Elliptic     = require('./wallet.js').Elliptic;
         _.each(total_validOutput.validOutput, function(output){
           var input = new TxInput(output.TxID, output.idx, null , from);
           inputs.push(input)
-        }); 
+        });
 
 
         outputs.push(new TxOutput(amount, to));
@@ -110,7 +99,7 @@ const Elliptic     = require('./wallet.js').Elliptic;
       var unspentOutputs = [];
       var total = 0;
       var utx = this.$findUTX(from);
-      
+
       return utx.then(function(unspentTXs){
         _.each(unspentTXs, function(tx){
           var tx_id = tx.txId;
@@ -136,7 +125,7 @@ const Elliptic     = require('./wallet.js').Elliptic;
           _.each(tx.outputs, function(output, opt_idx){
             // check if that output is already spent
             let transactionSpent = ((spentTXOs[tx.txId]) && _.includes(spentTXOs[tx.txId], opt_idx));
-            
+
             let belongsToOwner   = (output.publicKey === owner);
             if( !transactionSpent && belongsToOwner ){
               unspentTXs.push(tx);
@@ -171,6 +160,6 @@ const Elliptic     = require('./wallet.js').Elliptic;
 
   };
 
-  
+
   module.exports = BlockChain;
 }());

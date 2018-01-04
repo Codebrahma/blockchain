@@ -1,19 +1,19 @@
-const Crypto  = require('../util/crypto.js');
-const _       = require('underscore');
-const Elliptic = require('./wallet.js').Elliptic;
+const _        = require('underscore');
+const Crypto   = require('../util/crypto.js');
+const Elliptic = require('../util/elliptic.js');
 
 _.mixin(require('underscore.deepclone'));
 
 (function(){
-  
-  // Transaction input  
+
+  // Transaction input
   function TxInput(txId, fromOutput, signature, publicKey){
     this.TxID = txId || null;
     this.fromOutput = fromOutput;
     this.signature  = signature || null;
     this.publicKey  = publicKey || null;
   };
-  
+
   TxInput.prototype = {
     CanUnlockOutput : function(outputPubKey){
       return this.publicKey === outputPubKey;
