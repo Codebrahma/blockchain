@@ -40,33 +40,56 @@ const Transaction  = require('./transaction.js').Transaction;
       return this._chain.$isEmpty().then(initChain);
     },
 
+    /*
+      Method adds a block to the block chain
+      INPUT: data.from [ (sender pubkey)from, (receiver pubkey)to, amount ],
+        privateKey of sender
+    */
     $addBlock: function(data, privateKey){
       var self = this;
 
+      let prep = Q.all([
+        // Create a new transaction
+        self.$newUTXOTransaction(data, privateKey),
+
+        // Fetch block chain TIP
+        this._chain.$fetchLast(),
+      ]);
+
       var newUtxTx = function(d){
-        let tx        = d[0];
+        let txs       = [ d[0] ];
         let prevBlock = d[1];
 
-        var temp = new Block([tx], prevBlock.getHash());
+        // create a new block and mine
+        var temp = new Block(txs, prevBlock.getHash());
         temp.verify_and_mine();
 
         // append block to the block chain
         return self._chain.$append(temp);
       };
 
-      let prep = Q.all([
-        self.$newUTXOTransaction(data, privateKey),
-        this._chain.$fetchLast(),
-      ]);
-
       return prep.then(newUtxTx);
     },
 
+    /*
+      Method iterates through the chain and print each block
+    */
     $print: function(verbose){
-      // iterate through the chain and print each block
       return this._chain.$forEach(function(l){ l.print(verbose); });
     },
 
+    /*
+      Method retrieves owner balance, summing up output values
+        from unspent transactions
+      INPUT: owner's public key
+    */
+    $getBalance: function(owner) {
+      return this.$findUTX(owner).then(unspentTX => {
+        return _.reduce(unspentTX, (b,tx) => b + tx.getOwnerBalance(owner), 0.0);
+      });
+    },
+
+    // PRIVATE METHODS
     $newUTXOTransaction: function(data, pvtKey){
       let from   = data.from;
       let to     = data.to;
@@ -99,7 +122,6 @@ const Transaction  = require('./transaction.js').Transaction;
 
       });
     },
-
 
     $findSpendableOutputs: function(from, amount){
       var unspentOutputs = [];
@@ -149,21 +171,6 @@ const Transaction  = require('./transaction.js').Transaction;
         return unspentTXs;
       }, [ ]);
     },
-
-    $getBalance: function(owner) {
-      let balance = 0.0;
-      return this.$findUTX(owner).then((unspentTX)=>{
-        _.each(unspentTX, (tx, tx_idx)=>{
-          _.each(tx.outputs, (output, opt_idx)=>{
-            if(output.publicKey ==owner){
-              balance = balance + parseFloat(output.value);
-            }
-          });
-        });
-        return balance;
-      });
-    },
-
   };
 
 

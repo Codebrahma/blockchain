@@ -29,7 +29,6 @@ const Transaction = require('./transaction.js').Transaction;
     hashify: function(){
       const headers = [
         'prevBlockHash',
-        'transactions',
         'timeStamp',
         'nonce',
         'difficulty',
@@ -39,6 +38,7 @@ const Transaction = require('./transaction.js').Transaction;
       let headerStr = _.chain(headers).sort()
                        .map(function(v){ return _block[v] })
                        .value().join();
+      headerStr     = headerStr + JSON.stringify( this.serializeTransactions() );
 
       return Crypto.hashify(headerStr);
     },
@@ -91,6 +91,10 @@ const Transaction = require('./transaction.js').Transaction;
 
     serialize: function(){
       return this._block;
+    },
+
+    serializeTransactions: function(){
+      return _.map(this._block.transactions, t => t.serialize());
     },
 
     print: function(verbose){

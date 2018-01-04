@@ -18,6 +18,9 @@ _.mixin(require('underscore.deepclone'));
     CanUnlockOutput : function(outputPubKey){
       return this.publicKey === outputPubKey;
     },
+    serialize: function(){
+      return { TxID: this.TxID, fromOutput: this.fromOutput, signature: this.signature, publicKey: this.publicKey };
+    },
   };
 
   // Transaction output
@@ -28,6 +31,9 @@ _.mixin(require('underscore.deepclone'));
   TxOutput.prototype = {
     CanBeUnlockedWith: function(unlockingData){
       return this.publicKey === unlockingData;
+    },
+    serialize: function(){
+      return { publicKey: this.publicKey, value: this.value};
     },
   };
 
@@ -77,12 +83,26 @@ _.mixin(require('underscore.deepclone'));
       });
       return result_pair;
     },
-    isEql : function(t){
+    isEql: function(t){
       return (
         this.txId     == t.txId     &&
         this.getIId() == t.getIId() &&
         this.getOId() == t.getOId()
       );
+    },
+
+    serialize: function(){
+      let inputs  = _.map(this.inputs,  i => i.serialize());
+      let outputs = _.map(this.outputs, o => o.serialize());
+      return { "txId": this.txId, "inputs": inputs, "outputs": outputs };
+    },
+
+    getOwnerBalance: function(onwer){
+      let bal = _.reduce(this.outputs, function(b,o){
+        if(o.publicKey == onwer) b=b+parseFloat(o.value);
+        return b;
+      }, 0.0);
+      return bal;
     },
   };
   Transaction.deserialize = function(tx) {
