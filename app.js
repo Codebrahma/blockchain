@@ -52,9 +52,11 @@ function initializeCLI(){
       };
 
       Wallet.$fetch(data.from).then(function(w){
-        return blockchain.$addBlock( data, w.privateKey )
+        blockchain.$newUTXOTransaction(data, w.privateKey).then((tx)=>{
+          sendTo(knownNodes[0], {command: "newTx", payload: tx});
+        });
       })
-      .then(success("SUCCESS Add Block"), exception("FAILED Add Block"));
+      //.then(success("SUCCESS Add Block"), exception("FAILED Add Block"));
     });
 
   program
@@ -133,8 +135,17 @@ function initializeCLI(){
 const blockchain = new BlockChain();
 initializeCLI();
 
-//SEND version from one node to the other and make then download the chain
 
+function sendTo(to, data){
+  to = to.split(':')
+  var client = new net.Socket();
+  client.connect(to[1], to[0], function () {
+    client.write(JSON.stringify(data));
+  });
+}
+
+
+//SEND version from one node to the other and make then download the chain
 function sendVersion(to){
   to = to.split(':')
   var client = new net.Socket();
@@ -158,6 +169,8 @@ function handleMsg(msg){
       handleVersion(msg.payload);
     case "getBlocks":
       handlegetBlocks(msg.payload);
+    case "newTx":
+      handlenewTx(msg.payload);
   }
 }
 
@@ -171,7 +184,6 @@ function handleVersion(payload){
     }
   });
 }
-
 
 function getBlocks(from){
   from = from.split(':')
@@ -197,4 +209,8 @@ function handlegetBlocks(payload){
       console.log("fix");
     });  
   }); ;
+}
+
+function handlenewTx(payload){
+  blockchain.$addBlock(payload);
 }

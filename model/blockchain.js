@@ -45,21 +45,14 @@ const Transaction  = require('./transaction.js').Transaction;
       INPUT: data.from [ (sender pubkey)from, (receiver pubkey)to, amount ],
         privateKey of sender
     */
-    $addBlock: function(data, privateKey){
+    $addBlock: function(tx){
       var self = this;
-
-      let prep = Q.all([
-        // Create a new transaction
-        self.$newUTXOTransaction(data, privateKey),
-
         // Fetch block chain TIP
-        this._chain.$fetchLast(),
-      ]);
 
       var addBlock = function(d){
         // Mining reward + Requested transaction
-        let txs       = [Transaction.newCoinbaseTx(), d[0]];
-        let prevBlock = d[1];
+        let txs       = [Transaction.newCoinbaseTx(), tx];
+        let prevBlock = d;
 
         // create a new block and mine
         var temp = new Block(prevBlock.getHeight()+1, txs, prevBlock.getHash());
@@ -69,7 +62,8 @@ const Transaction  = require('./transaction.js').Transaction;
         return self._chain.$append(temp);
       };
 
-      return prep.then(addBlock);
+      //TODO add send version to all known nodes here
+      return this._chain.$fetchLast().then(addBlock);
     },
 
     /*
