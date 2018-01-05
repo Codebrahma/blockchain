@@ -34,7 +34,7 @@ const Block     = require('./block.js');
       // Call default exception hander and reject
       .catch(function(e){
         DBExceptionHandler(e);
-        return deferred.reject(e);
+        return def.reject(e);
       });
       return def.promise;
     },
@@ -49,7 +49,7 @@ const Block     = require('./block.js');
       // Call default exception hander and reject
       .catch(function(e){
         DBExceptionHandler(e);
-        return deferred.reject(e);
+        return def.reject(e);
       });
       return def.promise;
     },
@@ -92,15 +92,18 @@ const Block     = require('./block.js');
       return insertNewBlock().then(updateLastBlock);
     },
     $fetchLast: function(){
+      var def = Q.defer();
       // Get reference to last block
       var getLastBlockRef = function(){
         return this.$get('TIP');
       }.bind(this);
       // Fetch last block from DB
       var fetchLastBlock = function(v){
-        return this.$fetch(v.lh);
+        this.$fetch(v.lh).then(def.resolve);
       }.bind(this);
-      return getLastBlockRef().then(fetchLastBlock);
+      getLastBlockRef().then(fetchLastBlock, def.reject);
+
+      return def.promise;
     },
     $reduce: function(fn=()=>{}, v){
       var def = Q.defer();
@@ -117,7 +120,8 @@ const Block     = require('./block.js');
         this.$fetch(prev).then(iterateOverChain, def.reject);
       }.bind(this);
 
-      this.$fetchLast().then(iterateOverChain, def.reject);
+      //FIXME height of a 0 blockchain throws this exception
+      this.$fetchLast().then(iterateOverChain, ()=>def.resolve(0));
 
       return def.promise;
     },
@@ -139,6 +143,27 @@ const Block     = require('./block.js');
 
       return def.promise;
     },
+    $filter: function(fn=()=>{}){
+      let def = Q.defer();
+      let results = [];
+    
+      var iterateOverChain = function(block){
+      // Execute callback on the block
+        if(fn(block))results.push(block)
+        
+        // Get prev_hash property from the block
+        let prev = block.getPrevHash();
+        // Resolve function once we've traversed to the end
+        if(prev == "") return def.resolve(results);
+      
+        // If not fetch the previous block
+        this.$fetch(prev).then(iterateOverChain, def.reject);
+      }.bind(this);
+    
+      this.$fetchLast().then(iterateOverChain, def.reject);
+    
+      return def.promise;
+      },
   };
   ChainDB.prototype = _.extend(Object.create(DB.prototype), chainDBProto);
 

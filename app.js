@@ -7,6 +7,10 @@
 const BlockChain = require('./model/blockchain.js');
 const Wallet     = require('./model/wallet.js');
 const program    = require('commander');
+const net        = require('net');
+
+const node_id     = process.env.NODE_ID;
+const nodeAddress = "localhost:" + node_id;
 
 function exception(msg){
   return function(e){
@@ -85,8 +89,112 @@ function initializeCLI(){
       });
     });
 
+  program
+    .command('initChain [options]')
+    .description('initialize the chain')
+    .option('-MA, --minerAddress [MA]', 'miner address')
+    .action((req, options)=>{
+      var MA = options.minerAddress;
+      process.env.BLOCKCHAIN_MINER = MA;
+      if(MA){
+        blockchain.$init().then(success("Blockchain genesis block initialized"));
+      }
+    });
+  
+  program
+    .command('startNode [options]')
+    .description('start the node')
+    .option('-MA, --minerAddress [MA]', 'miner address')
+    .action((req, options)=>{
+      console.log(nodeAddress);
+
+      var knownNodes  = [];
+      knownNodes[0]   = "localhost:3000";
+      var MA          = options.minerAddress;
+
+      var server = net.createServer(function(socket) {
+        socket.on('data', function(data){
+          var data = data.toString();
+          console.log('Got Data');
+          console.log(data);
+          handleMsg(JSON.parse(data));
+        });
+      });
+      
+      server.listen(node_id, '127.0.0.1');
+      if (nodeAddress != knownNodes[0]) {
+        sendVersion(knownNodes[0]);
+      }
+    });
+
   program.parse(process.argv);
 };
 
 const blockchain = new BlockChain();
-blockchain.$init().then(initializeCLI, exception("FAILED TO Initialize CLI"));
+initializeCLI();
+
+//SEND version from one node to the other and make then download the chain
+
+function sendVersion(to){
+  to = to.split(':')
+  var client = new net.Socket();
+  client.connect(to[1], to[0], function() {
+    console.log('Connected');
+
+    blockchain.$getHeight().then((height)=>{
+      var result = {command: "version", payload: {height: height, from: nodeAddress}}
+      client.write(JSON.stringify(result));
+    });
+
+    client.on('data', function (data) {
+      console.log(data.toString());
+    });
+  });  
+}
+
+function handleMsg(msg){
+  switch(msg.command){
+    case "version":    
+      handleVersion(msg.payload);
+    case "getBlocks":
+      handlegetBlocks(msg.payload);
+  }
+}
+
+function handleVersion(payload){
+  blockchain.$getHeight().then((myHeight)=>{
+    console.log(myHeight);
+    if(myHeight < payload.height){
+      getBlocks(payload.from);
+    } else if(myHeight > payload.height) {
+      sendVersion(payload.from);
+    }
+  });
+}
+
+
+function getBlocks(from){
+  from = from.split(':')
+  var client = new net.Socket();
+  client.connect(to[1], to[0], function() {
+    console.log('Connected');
+
+    blockchain.$getHeight().then((height)=>{
+      var result = {command: "getBlocks", payload: {height: height, from: nodeAddress}}
+      client.write(JSON.stringify(result));
+    });
+  });  
+}
+
+function handlegetBlocks(payload){
+  var client = new net.Socket();
+  var to = payload.from.split(':');
+  console.log(to);
+  blockchain.$getBlocksUpto(payload.height).then((blocks)=>{
+    client.connect(to[1], to[0], function() {
+      var result = {command: "Blocks", payload: {blocks: blocks, from: nodeAddress}}
+      client.write(JSON.stringify(result));
+      console.log("fix");
+    });  
+  }); ;
+}

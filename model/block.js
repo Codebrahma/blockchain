@@ -9,7 +9,7 @@ const Transaction = require('./transaction.js').Transaction;
 
   const MAX_NONCE        = 9223372036854776000; // MaxInt64 = 2^63 - 1
 
-  function Block(transactions=[], prevBlockHash="", difficulty=process.env.BLOCK_DIFFICULTY||4, nonce=0, timeStamp=(new Date()), hash=""){
+  function Block(height=0, transactions=[], prevBlockHash="", difficulty=process.env.BLOCK_DIFFICULTY||4, nonce=0, timeStamp=(new Date()), hash=""){
     this._block = { };
     this._block.transactions = transactions;
     this._block.prevBlockHash= prevBlockHash;
@@ -17,6 +17,7 @@ const Transaction = require('./transaction.js').Transaction;
     this._block.nonce        = nonce;
     this._block.timeStamp    = String(timeStamp);
     this._block.hash         = hash;
+    this._block.height       = height;
   };
 
   // Instance methods
@@ -28,6 +29,7 @@ const Transaction = require('./transaction.js').Transaction;
 
     hashify: function(){
       const headers = [
+        'height',
         'prevBlockHash',
         'timeStamp',
         'nonce',
@@ -49,6 +51,9 @@ const Transaction = require('./transaction.js').Transaction;
 
     getPrevHash: function(){
       return this._block.prevBlockHash;
+    },
+    getHeight: function(){
+      return this._block.height;
     },
 
     appendTx: function(tx){
@@ -107,6 +112,7 @@ const Transaction = require('./transaction.js').Transaction;
         console.log("Nonce         : " + this._block.nonce);
         console.log("Difficulty    : " + this._block.difficulty);
         console.log("Time Stamp    : " + this._block.timeStamp);
+        console.log("Height    : " + this._block.height);
         console.log("PoW?          : " + this.validate());
         console.log("---------------------------------------------------------------------------------");
       } else {
@@ -125,6 +131,7 @@ const Transaction = require('./transaction.js').Transaction;
       txs.push(x);
     });
     return new Block(
+      _b['height'],
       txs,
       _b["prevBlockHash"],
       _b["difficulty"],
@@ -136,7 +143,7 @@ const Transaction = require('./transaction.js').Transaction;
   Block.getGenesisBlock =  function(){
     let cbTx = Transaction.newCoinbaseTx();
 
-    let _gBlock = new Block([cbTx]);
+    let _gBlock = new Block(height=1,[cbTx]);
     _gBlock.verify_and_mine();
 
     return _gBlock;

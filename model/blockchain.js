@@ -62,7 +62,7 @@ const Transaction  = require('./transaction.js').Transaction;
         let prevBlock = d[1];
 
         // create a new block and mine
-        var temp = new Block(txs, prevBlock.getHash());
+        var temp = new Block(prevBlock.getHeight()+1, txs, prevBlock.getHash());
         temp.verify_and_mine();
 
         // append block to the block chain
@@ -90,6 +90,18 @@ const Transaction  = require('./transaction.js').Transaction;
       });
     },
 
+    $getHeight: function(){
+      return this._chain.$reduce((b, x)=> x+1 , x=0)
+    },
+
+    $getBlocksUpto: function(upto){
+      return this._chain.$filter(function(block){
+        console.log("sfa");
+        console.log(upto);
+        console.log(block.getHeight());
+        return block.getHeight() >= upto;
+      });
+    },
     // PRIVATE METHODS
     $newUTXOTransaction: function(data, pvtKey){
       let from   = data.from;
