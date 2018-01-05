@@ -58,6 +58,7 @@ const Transaction = require('./transaction.js').Transaction;
     verify: function(){
       let what_to_return = true;
       _.each(this.getTransactions(), (tx)=>{
+        if(tx.isVaildReward()) return;
         let results = tx.getInputSignPair();
         _.each(tx.inputs, (input, idx)=>{
           if(!Elliptic.verify(input.publicKey, results[idx], input.signature)){
@@ -68,8 +69,8 @@ const Transaction = require('./transaction.js').Transaction;
       return what_to_return;
     },
 
-    verify_and_mine: function(runVerify=true){
-      if(runVerify && !this.verify()) throw("signature mismatch");
+    verify_and_mine: function(){
+      if(!this.verify()) throw("signature mismatch");
       this.mine();
       return this;
     },
@@ -133,7 +134,7 @@ const Transaction = require('./transaction.js').Transaction;
     let cbTx = Transaction.newCoinbaseTx();
 
     let _gBlock = new Block([cbTx]);
-    _gBlock.verify_and_mine(false);
+    _gBlock.verify_and_mine();
 
     return _gBlock;
   };

@@ -41,7 +41,7 @@ const Transaction  = require('./transaction.js').Transaction;
     },
 
     /*
-      Method adds a block to the block chain
+      Method adds requested transaction to the block chain
       INPUT: data.from [ (sender pubkey)from, (receiver pubkey)to, amount ],
         privateKey of sender
     */
@@ -56,8 +56,9 @@ const Transaction  = require('./transaction.js').Transaction;
         this._chain.$fetchLast(),
       ]);
 
-      var newUtxTx = function(d){
-        let txs       = [ d[0] ];
+      var addBlock = function(d){
+        // Mining reward + Requested transaction
+        let txs       = [Transaction.newCoinbaseTx(), d[0]];
         let prevBlock = d[1];
 
         // create a new block and mine
@@ -68,7 +69,7 @@ const Transaction  = require('./transaction.js').Transaction;
         return self._chain.$append(temp);
       };
 
-      return prep.then(newUtxTx);
+      return prep.then(addBlock);
     },
 
     /*

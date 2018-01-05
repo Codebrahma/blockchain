@@ -80,7 +80,7 @@ _.mixin(require('underscore.deepclone'));
       return result_pair;
     },
     isEql: function(t){
-      return JSON.stringify(t) === JSON.stringify(this);
+      return JSON.stringify(t.serialize()) === JSON.stringify(this.serialize());
     },
     serialize: function(){
       let inputs  = _.map(this.inputs,  i => i.serialize());
@@ -93,6 +93,16 @@ _.mixin(require('underscore.deepclone'));
         return b;
       }, 0.0);
       return bal;
+    },
+
+    isVaildReward: function(subsidy=process.env.SUBSIDY||10){
+      let validReward = (
+        (this.inputs.length  == 1) &&
+        (this.outputs.length == 1) &&
+        this.inputs[ 0 ].fromOutput == -1 &&
+        this.outputs[ 0 ].value == subsidy
+      );
+      return validReward;
     },
   };
   Transaction.deserialize = function(tx) {
