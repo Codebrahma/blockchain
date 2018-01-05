@@ -84,29 +84,46 @@ const Transaction  = require('./transaction.js').Transaction;
       });
     },
 
+    /*
+      Method retrieves the height of the current instance of the blockchain
+    */
     $getHeight: function(){
       return this._chain.$reduce((b, x)=> x+1 , x=0)
     },
 
+    /*
+      Method retrieves the blocks above height
+      INPUT: height
+    */
     $getBlocksUpto: function(upto){
       return this._chain.$filter(function(block){
-        console.log("sfa");
-        console.log(upto);
-        console.log(block.getHeight());
-        return block.getHeight() >= upto;
+        return block.getHeight() > upto;
       });
     },
 
+
+    /*
+      Method appends a set of blocks onto the chain
+      INPUT: blks
+    */
     $appendWithChain: function(blks){
-      // Validate append here
-      var isValidAppend = function(b, prev){
-        return (b.getHeight() == prev.getHeight() + 1);
-      };
       let blocks = _.chain(blks)
-                    .map(b => Block.deserialize(b))
+                    .map(b => Block.deserialize(b["_block"]))
                     .sortBy(b => b.getHeight());
 
-      let appendedBlocks = blocks.map(b=> this._chain.$verifyAndAppend(b, isValidAppend)).value()
+      // Validate append here
+      var isValidAppend = function(b, prev){
+        let validNext = true;
+        if(prev)  validNext = (
+          b.getHeight()   === prev.getHeight() + 1 &&
+          b.getPrevHash() === prev.getHash()
+        )
+        return validNext && b.verify();
+      };
+
+      let appendedBlocks = blocks.map(b=> this._chain.$verifyAndAppend(b, isValidAppend))
+                                 .value();
+
       return Q.all(appendedBlocks)
     },
 
