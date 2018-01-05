@@ -25,6 +25,9 @@ const Block     = require('./block.js');
   };
 
   DB.prototype = {
+    /*
+      FETCH Key from DB
+    */
     $get: function(k){
       var def = Q.defer();
       // Fetch element by key from DB
@@ -39,6 +42,9 @@ const Block     = require('./block.js');
       return def.promise;
     },
 
+    /*
+      FETCH Key,Value to DB
+    */
     $put: function(k, v){
       var def = Q.defer();
       // Set element by key,value in DB
@@ -67,13 +73,21 @@ const Block     = require('./block.js');
     DB.call(this, DB_PATH);
   };
   let chainDBProto = {
+    // Fetch key as a block instance
     $fetch: function(k){
-      // Wrap fetched element with Block
       return this.$get(k).then( Block.deserialize );
     },
+
+    // Insert block into DB and then update TIP
+    $append: function(block){
+      let head = { 'lh' : block.getHash() };
+      return this.$put(block.getHash(), block.serialize())
+                 .then(() => this.$put('TIP', head))
+    },
+
+    // Check if the chain is empty { Chain is empty if 'TIP' is not set }
     $isEmpty: function(){
       var def = Q.defer();
-      // Chain is empty if 'TIP' is not set
       this._db.get('TIP', function(error, value){
         let empty = error ? true : false;
         return def.resolve(empty);
@@ -81,99 +95,69 @@ const Block     = require('./block.js');
       return def.promise;
     },
 
-    $verifyAndAppend: function(block, vfn){
-      return this.$fetchLast()
-      .then(function(prev){
-        var def = Q.defer();
-        vfn(block,prev) ? def.resolve(true) : def.reject(false);
-        return def.promise;
-      })
-      .then(t => this.$append(block));
-    },
-    $append: function(block){
-      // Insert block into DB
-      var insertNewBlock = function(){
-        return this.$put(block.getHash(), block.serialize());
-      }.bind(this);
-      // Update reference to last block
-      var updateLastBlock = function(){
-        return this.$put('TIP', { 'lh' : block.getHash() });
-      }.bind(this);
-      return insertNewBlock().then(updateLastBlock);
-    },
+    // Fetch the tip and if TIP exists then block, if not null
     $fetchLast: function(){
       var def = Q.defer();
-      // Get reference to last block
-      var getLastBlockRef = function(){
-        return this.$get('TIP');
-      }.bind(this);
-      // Fetch last block from DB
-      var fetchLastBlock = function(v){
-        this.$fetch(v.lh).then(def.resolve);
-      }.bind(this);
-      getLastBlockRef().then(fetchLastBlock, def.reject);
-
+      this.$get('TIP').then(function(v){
+        this.$fetch(v.lh).then(def.resolve, def.reject);
+      }, function(){
+        def.resolve(null); // TIP NOT SET
+      });
       return def.promise;
     },
+
+    // Append based on condition vfn on block,tip
+    $verifyAndAppend: function(block, vfn){
+      return this.$fetchLast()
+        .then(function(prev){
+          var def = Q.defer();
+          vfn(block, prev) ? def.resolve(true) : def.reject(false);
+          return def.promise;
+        })
+       .then(() => this.$append(block));
+    },
+
+
+    /*
+      Functions to iterate over the blockchain
+    */
     $reduce: function(fn=()=>{}, v){
       var def = Q.defer();
-
       var iterateOverChain = function(block){
-
-        // Execute callback on the block, with reduced val
+        if(!block) return def.resolve(v);
         v = fn(block, v);
-        // Get prev_hash property from the block
         let prev  = block.getPrevHash();
-        // Resolve function with reduced value once we've traversed to the end
         if(prev == "") return def.resolve(v);
-        // If not fetch the previous block
         this.$fetch(prev).then(iterateOverChain, def.reject);
       }.bind(this);
-
-      //FIXME height of a 0 blockchain throws this exception
-      this.$fetchLast().then(iterateOverChain, ()=>def.resolve(0));
-
+      this.$fetchLast().then(iterateOverChain, def.reject);
       return def.promise;
     },
     $forEach: function(fn=()=>{}){
       var def = Q.defer();
-
       var iterateOverChain = function(block){
-        // Execute callback on the block
+        if(!block) return def.resolve();
         fn(block);
-        // Get prev_hash property from the block
         let prev  = block.getPrevHash();
-        // Resolve function once we've traversed to the end
         if(prev == "") return def.resolve();
-        // If not fetch the previous block
         this.$fetch(prev).then(iterateOverChain, def.reject);
       }.bind(this);
-
       this.$fetchLast().then(iterateOverChain, def.reject);
-
       return def.promise;
     },
     $filter: function(fn=()=>{}){
       let def = Q.defer();
       let results = [];
-
       var iterateOverChain = function(block){
-      // Execute callback on the block
-        if(fn(block))results.push(block)
-
-        // Get prev_hash property from the block
+        if(!block) return def.resolve(results);
+        if(fn(block)) results.push(block);
         let prev = block.getPrevHash();
-        // Resolve function once we've traversed to the end
         if(prev == "") return def.resolve(results);
-
-        // If not fetch the previous block
         this.$fetch(prev).then(iterateOverChain, def.reject);
       }.bind(this);
-
       this.$fetchLast().then(iterateOverChain, def.reject);
-
       return def.promise;
-      },
+    },
   };
   ChainDB.prototype = _.extend(Object.create(DB.prototype), chainDBProto);
 
