@@ -57,8 +57,11 @@ const Transaction = require('./transaction.js').Transaction;
 
     verify: function(){
       let what_to_return = true;
+      let rewardCount    = 0;
       _.each(this.getTransactions(), (tx)=>{
-        if(tx.isVaildReward()) return;
+        if(tx.isVaildReward() && rewardCount == 0){
+          rewardCount = rewardCount + 1; return;
+        };
         let results = tx.getInputSignPair();
         _.each(tx.inputs, (input, idx)=>{
           if(!Elliptic.verify(input.publicKey, results[idx], input.signature)){
