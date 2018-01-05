@@ -102,7 +102,7 @@ function initializeCLI(){
         blockchain.$init().then(success("Blockchain genesis block initialized"));
       }
     });
-  
+
   program
     .command('startNode [options]')
     .description('start the node')
@@ -122,7 +122,7 @@ function initializeCLI(){
           handleMsg(JSON.parse(data));
         });
       });
-      
+
       server.listen(node_id, '127.0.0.1');
       if (nodeAddress != knownNodes[0]) {
         sendVersion(knownNodes[0]);
@@ -160,12 +160,12 @@ function sendVersion(to){
     client.on('data', function (data) {
       console.log(data.toString());
     });
-  });  
+  });
 }
 
 function handleMsg(msg){
   switch(msg.command){
-    case "version":    
+    case "version":
       handleVersion(msg.payload);
     case "getBlocks":
       handlegetBlocks(msg.payload);
@@ -195,7 +195,7 @@ function getBlocks(from){
       var result = {command: "getBlocks", payload: {height: height, from: nodeAddress}}
       client.write(JSON.stringify(result));
     });
-  });  
+  });
 }
 
 function handlegetBlocks(payload){
@@ -204,10 +204,10 @@ function handlegetBlocks(payload){
   console.log(to);
   blockchain.$getBlocksUpto(payload.height).then((blocks)=>{
     client.connect(to[1], to[0], function() {
-      var result = {command: "Blocks", payload: {blocks: blocks, from: nodeAddress}}
+      var result = {command: "sentBlocks", payload: {blocks: blocks, from: nodeAddress}}
       client.write(JSON.stringify(result));
       console.log("fix");
-    });  
+    });
   }); ;
 }
 

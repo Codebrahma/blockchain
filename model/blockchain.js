@@ -96,6 +96,20 @@ const Transaction  = require('./transaction.js').Transaction;
         return block.getHeight() >= upto;
       });
     },
+
+    $appendWithChain: function(blks){
+      // Validate append here
+      var isValidAppend = function(b, prev){
+        return (b.getHeight() == prev.getHeight() + 1);
+      };
+      let blocks = _.chain(blks)
+                    .map(b => Block.deserialize(b))
+                    .sortBy(b => b.getHeight());
+
+      let appendedBlocks = blocks.map(b=> this._chain.$verifyAndAppend(b, isValidAppend)).value()
+      return Q.all(appendedBlocks)
+    },
+
     // PRIVATE METHODS
     $newUTXOTransaction: function(data, pvtKey){
       let from   = data.from;

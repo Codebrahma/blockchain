@@ -80,6 +80,16 @@ const Block     = require('./block.js');
       });
       return def.promise;
     },
+
+    $verifyAndAppend: function(block, vfn){
+      return this.$fetchLast()
+      .then(function(prev){
+        var def = Q.defer();
+        vfn(block,prev) ? def.resolve(true) : def.reject(false);
+        return def.promise;
+      })
+      .then(t => this.$append(block));
+    },
     $append: function(block){
       // Insert block into DB
       var insertNewBlock = function(){
@@ -146,22 +156,22 @@ const Block     = require('./block.js');
     $filter: function(fn=()=>{}){
       let def = Q.defer();
       let results = [];
-    
+
       var iterateOverChain = function(block){
       // Execute callback on the block
         if(fn(block))results.push(block)
-        
+
         // Get prev_hash property from the block
         let prev = block.getPrevHash();
         // Resolve function once we've traversed to the end
         if(prev == "") return def.resolve(results);
-      
+
         // If not fetch the previous block
         this.$fetch(prev).then(iterateOverChain, def.reject);
       }.bind(this);
-    
+
       this.$fetchLast().then(iterateOverChain, def.reject);
-    
+
       return def.promise;
       },
   };
