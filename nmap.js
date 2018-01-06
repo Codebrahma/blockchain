@@ -11,7 +11,7 @@ const NMAP_HPORT = process.env.NMAP_SPORT   ||"8888";
 const NMAP_SADDRESS = NMAP_HOST + ":" + NMAP_SPORT;
 const NMAP_HADDRESS = NMAP_HOST + ":" + NMAP_HPORT;
 
-const MAX_RESPONSE_DELAY = 100;
+const MAX_RESPONSE_DELAY = 600;
 
 function NodeList(){
   this.list = { };

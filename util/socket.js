@@ -3,7 +3,7 @@
   address : 127.0.0.1:9000
 */
 const net  = require('net');
-
+const Q    = require('Q');
 (function(){
 
   function SocketErrorHandler(type){
@@ -20,9 +20,14 @@ const net  = require('net');
     this.type = type;
   };
 
-  Socket.prototype.startServer = function(msgHandler=()=>{}){
+  /*
+    Starts websocket and listens
+    Takes in a $messageHandler;
+    messageHander resolves into a response
+    => if response is present, it's sent back
+  */
+  Socket.prototype.listen = function(msgHandler=()=>{}){
     if(this.type != "server") throw("Invalid socket operation");
-
     console.log("Socket Server listening at : " + this.address);
 
     this.server  = net.createServer(function(socket){
@@ -33,7 +38,11 @@ const net  = require('net');
       socket.on('data', function(data){
         var data = data.toString();
         try{
-          msgHandler(JSON.parse(data));
+          console.log("Payload : " + data);
+          let resp = msgHandler(JSON.parse(data));
+          resp = resp || { };
+          console.log("Responding with : " + resp);
+          socket.write(JSON.stringify(resp));
         } catch(e){ SocketErrorHandler("Server message handler failed")( e ) };
       });
     });
@@ -41,21 +50,35 @@ const net  = require('net');
     this.server.listen(this.port, this.host);
   };
 
-  Socket.prototype.messageClient = function(dt){
+  /*
+    sends message to server and fetches response
+  */
+  Socket.prototype.$message = function(dt){
     if(this.type != "client") throw("Invalid client operation");
-
+    var def = Q.defer();
     console.log("Sending socket message to : " + this.address);
 
     this.client = new net.Socket();
-    this.client.on('error',   SocketErrorHandler("Client message reception failed"));
-    this.client.on('timeout', SocketErrorHandler("Client message timeout"));
+    this.client.on('error',   function(e){
+      SocketErrorHandler("Message sending failed")(e);
+      def.reject(e);
+    });
+    this.client.on('timeout', function(e){
+      SocketErrorHandler("Message sending timeout")(e);
+      def.reject(e);
+    });
 
     let self = this;
     this.client.connect(this.port, this.host, function(){
-      self.client.write(JSON.stringify(dt), function(){
-        self.client.destroy();
-      });
+      self.client.write(JSON.stringify(dt))
     });
+    this.client.on('data', function(data){
+      var data = data.toString();
+      console.log("Server responded with : " + data);
+      def.resolve(JSON.parse(data));
+      self.client.destroy();
+    });
+    return def.promise;
   };
 
   module.exports = Socket;

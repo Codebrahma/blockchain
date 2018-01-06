@@ -16,8 +16,8 @@ const WSocket  = require('./socket.js');
     this.socket = new WSocket(this.to, type="client");
   };
 
-  Message.prototype.send = function(cmd){
-    this.socket.messageClient({ command: cmd, from: this.from, to:this.to });
+  Message.prototype.$send = function(cmd){
+    return this.socket.$message({ command: cmd, from: this.from, to:this.to });
   };
 
 
@@ -35,7 +35,7 @@ const WSocket  = require('./socket.js');
 
     listen: function(){
       var self = this;
-      this.socket.startServer(function(d){
+      this.socket.listen(function(d){
         self.onMessage(d);
       });
     },
@@ -52,7 +52,7 @@ const WSocket  = require('./socket.js');
       let cmd = dt.command;
       console.log("Received " + cmd + " from " + dt.from);
       let fn  = this[ "on" + capitalize(cmd) ];
-      fn ? fn(dt) : MessagerrorHandler("Handler missing")(dt);
+      return ( fn ? fn(dt) : MessagerrorHandler("Handler missing")(dt) );
     }
   };
 

@@ -18,13 +18,13 @@ const NMAP_HPORT = process.env.NMAP_SPORT   ||"8888";
 const NMAP_SADDRESS = NMAP_HOST + ":" + NMAP_SPORT;
 const NMAP_HADDRESS = NMAP_HOST + ":" + NMAP_HPORT;
 
-const HEARTBEAT_DELAY = 50;
+const HEARTBEAT_DELAY = 300;
 
 // Heartbeat
 var sendHeartBeat = function(){
   console.log('Hearbeat to nmap : ' + NMAP_SADDRESS);
   let m = new Message(NODE_SADDRESS, NMAP_SADDRESS);
-  m.send("heartbeat");
+  m.$send("heartbeat");
 };
 setInterval(sendHeartBeat, HEARTBEAT_DELAY * 1000);
 
