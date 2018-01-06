@@ -64,8 +64,6 @@ function initializeCLI(){
       let nl = new NodeList();
       let nmapMesseger = new Messenger(NMAP_SADDRESS);
 
-      // TODO: FIX Broadcast/Send not returning, potential memory leak!
-      // Retrieve list of active miners in the network
       nmapMesseger.$send("minerlist")
         .then(function(l){
           nl.updateList(l);

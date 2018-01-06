@@ -72,7 +72,7 @@ const Q    = require('Q');
 
     let self = this;
     this.client.connect(this.port, this.host, function(){
-      self.client.write(JSON.stringify(dt))
+      self.client.write(JSON.stringify(dt));
     });
     this.client.on('data', function(data){
       var data = data.toString();

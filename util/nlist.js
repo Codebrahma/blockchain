@@ -4,12 +4,14 @@
     The list cleans itself (ie) removes inactive miners
   */
 
-  function NodeList(selfAddress="localhost", INACTIVITY=24*3600*1000){
+  function NodeList(selfAddress="localhost", INACTIVITY=-1){
     this.list = { };
     this.delay = INACTIVITY;
     this.selfAddress = selfAddress;
+
     // Periodically remove inactive connections
-    setInterval(() => this.unregisterInActive(), this.delay/2);
+    if(INACTIVITY > 0)
+      this.interval = setInterval(() => this.unregisterInActive(), this.delay/2);
   };
 
   NodeList.prototype = {
