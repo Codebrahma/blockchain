@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Module dependencies.
+ * DEPRECATED : Broken into NMAP / MINER / WALLET
+ * WILL SOON GO AWAY!!!
  */
 
 const BlockChain = require('./model/blockchain.js');

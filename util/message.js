@@ -1,3 +1,5 @@
+const Q        = require('Q');
+const _        = require('underscore');
 const WSocket  = require('./socket.js');
 
 (function(){
@@ -10,14 +12,23 @@ const WSocket  = require('./socket.js');
     };
   };
 
-  function Message(from, to){
+  function Messenger(from, to=from){
     this.from = from;
     this.to   = to;
     this.socket = new WSocket(this.to, type="client");
   };
 
-  Message.prototype.$send = function(cmd){
-    return this.socket.$message({ command: cmd, from: this.from, to:this.to });
+  Messenger.prototype = {
+    $send: function(cmd, data={}){
+      return this.socket.$message({ command: cmd, from: this.from, to:this.to, data:data });
+    },
+    $broadcast: function(nList, cmd, data={}){
+      let self = this.from;
+      let broadcast = _.map(nList.list, function(d, to){
+        return new Messenger(self, to).$send(cmd, data);
+      });
+      return Q.all(broadcast);
+    },
   };
 
 
@@ -31,12 +42,13 @@ const WSocket  = require('./socket.js');
     onHeartbeat  : ()=>{},
     onRegister   : ()=>{},
     onUnregister : ()=>{},
+    onMinerlist  : ()=>{},
     onDefault    : (dt)=>{ MessagerrorHandler("Unrecognized command")(dt) },
 
     listen: function(){
       var self = this;
       this.socket.listen(function(d){
-        self.onMessage(d);
+        return self.onMessage(d);
       });
     },
 
@@ -50,14 +62,13 @@ const WSocket  = require('./socket.js');
         return;
       };
       let cmd = dt.command;
-      console.log("Received " + cmd + " from " + dt.from);
       let fn  = this[ "on" + capitalize(cmd) ];
       return ( fn ? fn(dt) : MessagerrorHandler("Handler missing")(dt) );
     }
   };
 
   module.exports = {
-    "Message": Message,
+    "Messenger": Messenger,
     "MessageHandler": MessageHandler,
   };
 

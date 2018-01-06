@@ -41,8 +41,9 @@ const Q    = require('Q');
           console.log("Payload : " + data);
           let resp = msgHandler(JSON.parse(data));
           resp = resp || { };
+          resp = JSON.stringify(resp);
           console.log("Responding with : " + resp);
-          socket.write(JSON.stringify(resp));
+          socket.write(resp);
         } catch(e){ SocketErrorHandler("Server message handler failed")( e ) };
       });
     });
@@ -57,6 +58,7 @@ const Q    = require('Q');
     if(this.type != "client") throw("Invalid client operation");
     var def = Q.defer();
     console.log("Sending socket message to : " + this.address);
+    console.log(dt);
 
     this.client = new net.Socket();
     this.client.on('error',   function(e){
