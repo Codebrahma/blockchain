@@ -52,7 +52,7 @@ function initializeCLI(){
         amount : req.amount,
       };
 
-      Wallet.$fetch(data.from).then(function(w){
+      new Wallet(data.from, DB_PATH="/wallet").$fetch.then(function(w){
         blockchain.$newUTXOTransaction(data, w.privateKey).then((tx)=>{
           sendTo(knownNodes[0], {command: "newTx", payload: tx});
         });

@@ -75,7 +75,7 @@ const Block     = require('./block.js');
   let chainDBProto = {
     // Fetch key as a block instance
     $fetch: function(k){
-      return this.$get(k).then( Block.deserialize );
+      return this.$get(k).then( b => Block.deserialize(b) );
     },
 
     // Insert block into DB and then update TIP
@@ -83,6 +83,7 @@ const Block     = require('./block.js');
       let head = { 'lh' : block.getHash() };
       return this.$put(block.getHash(), block.serialize())
                  .then(() => this.$put('TIP', head))
+                 .then(() => block);
     },
 
     // Check if the chain is empty { Chain is empty if 'TIP' is not set }
@@ -98,11 +99,10 @@ const Block     = require('./block.js');
     // Fetch the tip and if TIP exists then block, if not null
     $fetchLast: function(){
       var def = Q.defer();
-      this.$get('TIP').then(function(v){
-        this.$fetch(v.lh).then(def.resolve, def.reject);
-      }, function(){
-        def.resolve(null); // TIP NOT SET
-      });
+      this.$get('TIP')
+        .then(v  => this.$fetch(v.lh) )
+        .then(b  => def.resolve(b)    )
+        .catch(e => def.resolve(null) );
       return def.promise;
     },
 
@@ -128,9 +128,9 @@ const Block     = require('./block.js');
         v = fn(block, v);
         let prev  = block.getPrevHash();
         if(prev == "") return def.resolve(v);
-        this.$fetch(prev).then(iterateOverChain, def.reject);
+        this.$fetch(prev).then(b => iterateOverChain(b), e=>def.reject(e));
       }.bind(this);
-      this.$fetchLast().then(iterateOverChain, def.reject);
+      this.$fetchLast().then(b => iterateOverChain(b), e=>def.reject(e));
       return def.promise;
     },
     $forEach: function(fn=()=>{}){
@@ -140,9 +140,9 @@ const Block     = require('./block.js');
         fn(block);
         let prev  = block.getPrevHash();
         if(prev == "") return def.resolve();
-        this.$fetch(prev).then(iterateOverChain, def.reject);
+        this.$fetch(prev).then(b => iterateOverChain(b), e=>def.reject(e));
       }.bind(this);
-      this.$fetchLast().then(iterateOverChain, def.reject);
+      this.$fetchLast().then(b => iterateOverChain(b), e=>def.reject(e));
       return def.promise;
     },
     $filter: function(fn=()=>{}){
@@ -153,9 +153,9 @@ const Block     = require('./block.js');
         if(fn(block)) results.push(block);
         let prev = block.getPrevHash();
         if(prev == "") return def.resolve(results);
-        this.$fetch(prev).then(iterateOverChain, def.reject);
+        this.$fetch(prev).then(b => iterateOverChain(b), e=>def.reject(e));
       }.bind(this);
-      this.$fetchLast().then(iterateOverChain, def.reject);
+      this.$fetchLast().then(b => iterateOverChain(b), e=>def.reject(e));
       return def.promise;
     },
   };

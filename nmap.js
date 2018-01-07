@@ -14,7 +14,7 @@ const NMAP_HADDRESS = NMAP_HOST + ":" + NMAP_HPORT;
 
 
 (function(){
-  let nl = new NodeList(selfAddress=NMAP_SADDRESS, INACTIVITY=60 * 1000);
+  let nl = new NodeList(selfAddress=NMAP_SADDRESS, INACTIVITY=180 * 1000);
   // socket => register / unregister / heartbeat
   console.log("NMAP listening");
   let nmapMsgHdlr = new MessageHandler(NMAP_SADDRESS);

@@ -1,31 +1,37 @@
 const WDB       = require('./db.js').WalletDB;
 const Elliptic  = require('../util/elliptic.js');
-const DB_PATH = process.env.DB_PATH;
 
 (function(){
-  function Wallet(priv,pub){
-    this.privateKey = priv;
+  function Wallet(pub, priv){
     this.pubKey     = pub;
-    if(!priv)
-      this.newKeyPair();
+    this.privateKey = priv;
     return this;
-  };
-  Wallet.DB = new WDB(DB_PATH+"/wallet")
-  Wallet.$fetch = function(ky){
-    return Wallet.DB.$get(ky).then(function(v){
-      return new Wallet(v, ky);
-    });
   };
   Wallet.prototype = {
     $init: function(){
-      return Wallet.DB.$save(this);
+      return Wallet._db.$save(this);
     },
-    newKeyPair: function(){
-      var key         = Elliptic.ec.genKeyPair();
-      this.privateKey = key.getPrivate('hex');
-      this.pubKey     = key.getPublic().encode('hex');
-    }
+    $fetch: function(){
+      let self = this;
+      return Wallet._db.$get(this.pubKey).then(function(v){
+        self.privateKey = v;
+        return self;
+      });
+    },
   };
+
+  Wallet.init = function(DB_PATH){
+    this._path = DB_PATH;
+    this._db   = new WDB(DB_PATH);
+  };
+
+  Wallet.new = function(){
+    var key         = Elliptic.ec.genKeyPair();
+    let privateKey  = key.getPrivate('hex');
+    let pubKey      = key.getPublic().encode('hex');
+    return new Wallet(pubKey, privateKey);
+  };
+
   // Export
   module.exports = Wallet;
 })();

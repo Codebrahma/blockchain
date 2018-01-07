@@ -108,7 +108,7 @@ _.mixin(require('underscore.deepclone'));
   Transaction.deserialize = function(tx) {
     return new Transaction(tx.txId, tx.inputs, tx.outputs);
   };
-  Transaction.newCoinbaseTx = function(to=process.env.BLOCKCHAIN_MINER||"codeanand", data="Reward to "+to,subsidy=process.env.SUBSIDY||10){
+  Transaction.newCoinbaseTx = function(to=process.env.BLOCKCHAIN_MINER, data="Reward to "+to,subsidy=process.env.SUBSIDY||10){
     let input  = new TxInput(null, -1, data);
     let output = new TxOutput(subsidy, to);
     let tx     = new Transaction(null, [input], [output])

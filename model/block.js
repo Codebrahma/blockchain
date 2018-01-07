@@ -141,7 +141,7 @@ const Transaction = require('./transaction.js').Transaction;
   };
 
   Block.getGenesisBlock =  function(){
-    let cbTx = Transaction.newCoinbaseTx();
+    let cbTx = Transaction.newCoinbaseTx(to="0484efac84fc3652697fd7f7482fdf7250c73f39a05e8328f3ab4d4872e941f4f6cb31c88520672241b2877c522250fa960236d249879231250ee9250fa4a26945");
 
     let _gBlock = new Block(height=1,[cbTx]);
     _gBlock.verify_and_mine();

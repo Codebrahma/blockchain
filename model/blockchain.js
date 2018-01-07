@@ -10,8 +10,8 @@ const TxOutput     = require('./transaction.js').TxOutput;
 const Transaction  = require('./transaction.js').Transaction;
 
 (function(){
-  function BlockChain(){
-    this._chain  = new DB(process.env.DB_PATH+"/chain");
+  function BlockChain(DB_PATH){
+    this._chain  = new DB(DB_PATH);
     this._wallet = Wallet;
   };
 
@@ -41,17 +41,17 @@ const Transaction  = require('./transaction.js').Transaction;
     },
 
     /*
-      Method adds requested transaction to the block chain
-      INPUT: data.from [ (sender pubkey)from, (receiver pubkey)to, amount ],
-        privateKey of sender
+      Method adds transactions as a new block to the block chain
+      INPUT: published transaction object
     */
-    $addBlock: function(tx){
+    $addBlock: function(txs){
       var self = this;
         // Fetch block chain TIP
 
       var addBlock = function(d){
         // Mining reward + Requested transaction
-        let txs       = [Transaction.newCoinbaseTx(), tx];
+        txs = _.map(txs, t => new Transaction(t.txId, t.inputs, t.outputs));
+        txs = [Transaction.newCoinbaseTx()].concat(txs);
         let prevBlock = d;
 
         // create a new block and mine
@@ -62,7 +62,6 @@ const Transaction  = require('./transaction.js').Transaction;
         return self._chain.$append(temp);
       };
 
-      //TODO add send version to all known nodes here
       return this._chain.$fetchLast().then(addBlock);
     },
 
@@ -101,7 +100,6 @@ const Transaction  = require('./transaction.js').Transaction;
       });
     },
 
-
     /*
       Method appends a set of blocks onto the chain
       INPUT: blks
@@ -139,7 +137,6 @@ const Transaction  = require('./transaction.js').Transaction;
       var sepndableOps = this.$findSpendableOutputs(from, amount);
 
       return sepndableOps.then(function(total_validOutput){
-
         if(total_validOutput.total < amount) throw('Not enough funds');
 
         _.each(total_validOutput.validOutput, function(output){
@@ -184,7 +181,6 @@ const Transaction  = require('./transaction.js').Transaction;
       let spentTXOs  = {};
 
       return this._chain.$reduce(function(block, unspentTXs){
-
         // interating through all transactions in a blokck
         _.each(block.getTransactions(), (tx,tx_idx)=>{
           // for each output in the transaction

@@ -6,8 +6,7 @@
 const Messenger       = require('./util/message.js').Messenger;
 const MessageHandler  = require('./util/message.js').MessageHandler;
 const NodeList        = require('./util/nlist.js');
-// const BlockChain = require('./model/blockchain.js');
-// const Wallet     = require('./model/wallet.js');
+const BlockChain      = require('./model/blockchain.js');
 
 const NODE_HOST     = process.env.NODE_HOST||"localhost";
 const NODE_PORT     = process.env.NODE_PORT||"3000";
@@ -17,8 +16,13 @@ const NMAP_SPORT    = process.env.NMAP_SPORT||"9999";
 const NMAP_HPORT    = process.env.NMAP_SPORT||"8888";
 const NMAP_SADDRESS = NMAP_HOST + ":" + NMAP_SPORT;
 const NMAP_HADDRESS = NMAP_HOST + ":" + NMAP_HPORT;
+const DB_PATH       = process.env.DB_PATH || "minerdb-"+NODE_PORT;
 
-(function(){
+// TODO: REQUIRES  TO BE SET Handle cleanly!
+if(!process.env.BLOCKCHAIN_MINER){ throw("BLOCKCHAIN_MINER not set") }
+if(!process.env.BLOCK_DIFFICULTY){ throw("BLOCK_DIFFICULTY not set") }
+
+let minerAction = function(){
 
   // Node list maintainer
   let nl = new NodeList(selfAddress=NODE_SADDRESS);
@@ -29,8 +33,9 @@ const NMAP_HADDRESS = NMAP_HOST + ":" + NMAP_HPORT;
   // Communication channel to talk to other miners
   let myMesseger = new Messenger(NODE_SADDRESS);
 
+  nmapMesseger.$send("minerlist").then(l => nl.updateList(l));
   // Periodic Heartbeat to let nmap know you're alive
-  const HEARTBEAT_DELAY = 25 * 1000;
+  const HEARTBEAT_DELAY = 30 * 1000;
   setInterval(()=> nmapMesseger.$send("heartbeat"), HEARTBEAT_DELAY);
 
   // Periodic update of fresh miner list from nmap
@@ -38,22 +43,34 @@ const NMAP_HADDRESS = NMAP_HOST + ":" + NMAP_HPORT;
   setInterval(() => nmapMesseger.$send("minerlist").then(l => nl.updateList(l)),
       MINER_FETCH_DELAY);
 
-  console.log("Miner listening");
+  console.log("MINER_LISTENING");
   miner = new MessageHandler(NODE_SADDRESS);
   miner.listen();
 
   // Listen for broadcast transactions
   miner.on("newblock", function(d){
+    // verify and update the local blockchain
     console.log("NEW BLOCK ADDED TO BLOCK CHAIN");
-    // choose to update local block chain
   });
 
   // Listen for broadcast transactions
   miner.on("transaction", function(d){
-    console.log("TRANSACTION PUBLISHED IN THE NETWORK");
-    // choose to mine block
+    // FIFO miner
+    console.log("MINING_NEW_TRANSACTION");
+    blockchain.$addBlock(d.data).then(function(b){
+      console.log("BLOCKCHAIN_UPDATED");
+      // Broadcast new block to other miners in node_list
+      return myMesseger.$broadcast(nl, "newblock", b.serialize());
+    })
+    .then(function(){
+      console.log("BROADCASTING_TO_NETWORK");
+    }).catch(function(e){
+      console.log("MINING_FAILED");
+      console.log(e);
+    });
   });
+};
 
-  // To broadcast message to other miners in node_list
-  // myMesseger.$broadcast(nl, "transaction", { block data });
-}());
+// BlockChain
+let blockchain = new BlockChain(DB_PATH);
+blockchain.$init().then(minerAction);
