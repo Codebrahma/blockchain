@@ -9,12 +9,12 @@ const NodeList        = require('./util/nlist.js');
 // const BlockChain = require('./model/blockchain.js');
 // const Wallet     = require('./model/wallet.js');
 
-const NODE_HOST    = process.env.NODE_HOST||"localhost";
-const NODE_PORT    = process.env.NODE_PORT||"3000";
-const NODE_SADDRESS= NODE_HOST + ":" + NODE_PORT;
-const NMAP_HOST  = process.env.NMAP_HOST    ||"localhost";
-const NMAP_SPORT = process.env.NMAP_SPORT   ||"9999";
-const NMAP_HPORT = process.env.NMAP_SPORT   ||"8888";
+const NODE_HOST     = process.env.NODE_HOST||"localhost";
+const NODE_PORT     = process.env.NODE_PORT||"3000";
+const NODE_SADDRESS = NODE_HOST + ":" + NODE_PORT;
+const NMAP_HOST     = process.env.NMAP_HOST||"localhost";
+const NMAP_SPORT    = process.env.NMAP_SPORT||"9999";
+const NMAP_HPORT    = process.env.NMAP_SPORT||"8888";
 const NMAP_SADDRESS = NMAP_HOST + ":" + NMAP_SPORT;
 const NMAP_HADDRESS = NMAP_HOST + ":" + NMAP_HPORT;
 
@@ -28,7 +28,6 @@ const NMAP_HADDRESS = NMAP_HOST + ":" + NMAP_HPORT;
 
   // Communication channel to talk to other miners
   let myMesseger = new Messenger(NODE_SADDRESS);
-
 
   // Periodic Heartbeat to let nmap know you're alive
   const HEARTBEAT_DELAY = 25 * 1000;
@@ -56,5 +55,5 @@ const NMAP_HADDRESS = NMAP_HOST + ":" + NMAP_HPORT;
   });
 
   // To broadcast message to other miners in node_list
-  // myMesseger.$broadcast(nl, "transaction", { block data })
+  // myMesseger.$broadcast(nl, "transaction", { block data });
 }());

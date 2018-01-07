@@ -22,6 +22,7 @@
     "crypto": "^1.0.1",
     "elliptic": "^6.4.0",
     "encoding-down": "^3.0.1",
+    "express": "^4.16.2",
     "leveldown": "^2.1.1",
     "levelup": "^2.0.1",
     "md5": "^2.2.1",
