@@ -20,6 +20,7 @@ const WSocket  = require('./socket.js');
 
   Messenger.prototype = {
     $send: function(cmd, data={}){
+      console.log(cmd + " to " + this.to);
       return this.socket.$message({ command: cmd, from: this.from, to:this.to, data:data });
     },
     $broadcast: function(nList, cmd, data={}){
@@ -30,7 +31,6 @@ const WSocket  = require('./socket.js');
       return Q.all(broadcast);
     },
   };
-
 
   function MessageHandler(address){
     this.address = address;
@@ -63,6 +63,7 @@ const WSocket  = require('./socket.js');
       };
       let cmd = dt.command;
       let fn  = this[ "on" + capitalize(cmd) ];
+      console.log(cmd + " from " + dt.from);
       return ( fn ? fn(dt) : MessagerrorHandler("Handler missing")(dt) );
     }
   };

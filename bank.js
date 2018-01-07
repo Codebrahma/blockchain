@@ -34,6 +34,8 @@ const WALLET_HADDRESS= WALLET_HOST + ":" + WALLET_HPORT;
 const WDB_PATH      = process.env.WDB_PATH || "walletdb-"+WALLET_SPORT;
 const CDB_PATH      = process.env.CDB_PATH || "chaindb-"+WALLET_SPORT;
 
+if(!process.env.BLOCK_DIFFICULTY){ throw("BLOCK_DIFFICULTY not set") }
+
 // BlockChain
 let blockchain = new BlockChain(CDB_PATH);
 blockchain.$init(); // TODO Handle chain ready!
@@ -51,6 +53,10 @@ let nmapMesseger = new Messenger(WALLET_SADDRESS, NMAP_SADDRESS);
 let myMesseger = new Messenger(WALLET_SADDRESS);
 
 nmapMesseger.$send("minerlist").then(l => nl.updateList(l))
+// Periodic Heartbeat to let nmap know you're alive
+const HEARTBEAT_DELAY = 30 * 1000;
+setInterval(()=> nmapMesseger.$send("heartbeat"), HEARTBEAT_DELAY);
+
 // Periodic update of fresh miner list from nmap
 const MINER_FETCH_DELAY = 60 * 1000;
 setInterval(() => nmapMesseger.$send("minerlist").then(l => nl.updateList(l)),
@@ -64,9 +70,15 @@ setInterval(() => nmapMesseger.$send("minerlist").then(l => nl.updateList(l)),
   walletNode.listen();
   // Listen for block-updates and update local blockchain
   walletNode.on("newblock", function(d){
-    // if the new block is already present : do nothing
-    // if the new block is not valid       : do nothing
+    // verify and update the local blockchain
+    console.log("NEW_BLOCK_RECIEVED");
+    blockchain.$appendStreamBlock(d.data).then(function(){
+      console.log("APPENDED_RECIEVED_BLOCK");
+    }, function(){
+      console.log("DISCARDED_RECIEVED_BLOCK");
+    });
   });
+
 }());
 
 (function(){

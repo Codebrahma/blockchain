@@ -38,11 +38,11 @@ const Q    = require('Q');
       socket.on('data', function(data){
         var data = data.toString();
         try{
-          console.log("Payload : " + data);
+          // console.log("Payload : " + data);
           let resp = msgHandler(JSON.parse(data));
           resp = resp || { };
           resp = JSON.stringify(resp);
-          console.log("Responding with : " + resp);
+          // console.log("Responding with : " + resp);
           socket.write(resp);
         } catch(e){ SocketErrorHandler("Server message handler failed")( e ) };
       });
@@ -57,8 +57,8 @@ const Q    = require('Q');
   Socket.prototype.$message = function(dt){
     if(this.type != "client") throw("Invalid client operation");
     var def = Q.defer();
-    console.log("Sending socket message to : " + this.address);
-    console.log(dt);
+    // console.log("Sending socket message to : " + this.address);
+    // console.log(dt);
 
     this.client = new net.Socket();
     this.client.on('error',   function(e){
@@ -76,7 +76,7 @@ const Q    = require('Q');
     });
     this.client.on('data', function(data){
       var data = data.toString();
-      console.log("Server responded with : " + data);
+      // console.log("Server responded with : " + data);
       def.resolve(JSON.parse(data));
       self.client.destroy();
     });

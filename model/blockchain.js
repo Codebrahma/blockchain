@@ -59,10 +59,23 @@ const Transaction  = require('./transaction.js').Transaction;
         temp.verify_and_mine();
 
         // append block to the block chain
-        return self._chain.$append(temp);
+        return self.$append(temp);
       };
 
       return this._chain.$fetchLast().then(addBlock);
+    },
+
+    $appendStreamBlock: function(d){
+      return this.$append(Block.deserialize(d));
+    },
+
+    $append: function(block){
+      return this._chain.$verifyAndAppend(block, function(block, prev){
+        return (
+          block.isValid()                 && // Valid block
+          (!prev || block.isValidNext(prev)) // Valid next
+        );
+      });
     },
 
     /*

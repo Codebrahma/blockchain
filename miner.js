@@ -50,24 +50,29 @@ let minerAction = function(){
   // Listen for broadcast transactions
   miner.on("newblock", function(d){
     // verify and update the local blockchain
-    console.log("NEW BLOCK ADDED TO BLOCK CHAIN");
+    console.log("NEW_BLOCK_RECIEVED");
+    blockchain.$appendStreamBlock(d.data).then(function(){
+      console.log("APPENDED_RECIEVED_BLOCK");
+    }, function(){
+      console.log("DISCARDED_RECIEVED_BLOCK");
+    });
   });
 
   // Listen for broadcast transactions
   miner.on("transaction", function(d){
     // FIFO miner
     console.log("MINING_NEW_TRANSACTION");
-    blockchain.$addBlock(d.data).then(function(b){
-      console.log("BLOCKCHAIN_UPDATED");
-      // Broadcast new block to other miners in node_list
-      return myMesseger.$broadcast(nl, "newblock", b.serialize());
-    })
-    .then(function(){
-      console.log("BROADCASTING_TO_NETWORK");
-    }).catch(function(e){
-      console.log("MINING_FAILED");
-      console.log(e);
-    });
+    blockchain.$addBlock(d.data)
+      .then(function(b){
+        console.log("BLOCKCHAIN_UPDATED");
+        myMesseger.$broadcast(nl, "newblock", b.serialize());
+      })
+      .then(function(){
+        console.log("BROADCASTING_TO_NETWORK");
+      }).catch(function(e){
+        console.log("OPERATION_FAILED");
+        console.log(e);
+      });
   });
 };
 

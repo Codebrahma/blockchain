@@ -8,8 +8,9 @@ const Transaction = require('./transaction.js').Transaction;
 (function(){
 
   const MAX_NONCE        = 9223372036854776000; // MaxInt64 = 2^63 - 1
+  const BLOCK_DIFFICULTY = process.env.BLOCK_DIFFICULTY;
 
-  function Block(height=0, transactions=[], prevBlockHash="", difficulty=process.env.BLOCK_DIFFICULTY||4, nonce=0, timeStamp=(new Date()), hash=""){
+  function Block(height=0, transactions=[], prevBlockHash="", difficulty=BLOCK_DIFFICULTY||4, nonce=0, timeStamp=(new Date()), hash=""){
     this._block = { };
     this._block.transactions = transactions;
     this._block.prevBlockHash= prevBlockHash;
@@ -58,6 +59,23 @@ const Transaction = require('./transaction.js').Transaction;
 
     appendTx: function(tx){
       this._block.transactions.push(tx);
+    },
+
+    isValid: function(){
+      return (
+        this._block.hash == this.hashify() && // Integrity check
+        this.validate()                    && // Valid proof of work
+        this.verify()                      && // Valid signature?
+        this._block.difficulty == BLOCK_DIFFICULTY
+      );
+    },
+
+    isValidNext: function(prev){
+      return (
+        this.getHeight()   === prev.getHeight() + 1 && // Height is valid
+        this.getPrevHash() === prev.getHash()       && // Hash chain is valid
+        this._block.difficulty >= prev._block.difficulty
+      );
     },
 
     verify: function(){
@@ -112,8 +130,8 @@ const Transaction = require('./transaction.js').Transaction;
         console.log("Nonce         : " + this._block.nonce);
         console.log("Difficulty    : " + this._block.difficulty);
         console.log("Time Stamp    : " + this._block.timeStamp);
-        console.log("Height    : " + this._block.height);
-        console.log("PoW?          : " + this.validate());
+        console.log("Height        : " + this._block.height);
+        console.log("Valid?        : " + this.isValid());
         console.log("---------------------------------------------------------------------------------");
       } else {
         process.stdout.write(JSON.stringify(this._block.transactions));
@@ -142,10 +160,8 @@ const Transaction = require('./transaction.js').Transaction;
 
   Block.getGenesisBlock =  function(){
     let cbTx = Transaction.newCoinbaseTx(to="0484efac84fc3652697fd7f7482fdf7250c73f39a05e8328f3ab4d4872e941f4f6cb31c88520672241b2877c522250fa960236d249879231250ee9250fa4a26945");
-
-    let _gBlock = new Block(height=1,[cbTx]);
+    let _gBlock = new Block(height=1,transactions=[cbTx],prevBlockHash="", difficulty=5, nonce=0, timeStamp=(new Date(0)));
     _gBlock.verify_and_mine();
-
     return _gBlock;
   };
 
