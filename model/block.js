@@ -3,12 +3,14 @@ const _       = require('underscore');
 const Crypto    = require('../util/crypto.js');
 const Elliptic  = require('../util/elliptic.js');
 
+const Constants   = require('./constants.js');
 const Transaction = require('./transaction.js').Transaction;
 
 (function(){
 
   const MAX_NONCE        = 9223372036854776000; // MaxInt64 = 2^63 - 1
-  const BLOCK_DIFFICULTY = process.env.BLOCK_DIFFICULTY;
+  const BLOCK_DIFFICULTY = Constants.BLOCK_DIFFICULTY;
+  const GENESIS_USER     = Constants.GENESIS_USER;
 
   function Block(height=0, transactions=[], prevBlockHash="", difficulty=BLOCK_DIFFICULTY||4, nonce=0, timeStamp=(new Date()), hash=""){
     this._block = { };
@@ -159,7 +161,7 @@ const Transaction = require('./transaction.js').Transaction;
   };
 
   Block.getGenesisBlock =  function(){
-    let cbTx = Transaction.newCoinbaseTx(to="0484efac84fc3652697fd7f7482fdf7250c73f39a05e8328f3ab4d4872e941f4f6cb31c88520672241b2877c522250fa960236d249879231250ee9250fa4a26945");
+    let cbTx = Transaction.newCoinbaseTx(to=GENESIS_USER);
     let _gBlock = new Block(height=1,transactions=[cbTx],prevBlockHash="", difficulty=5, nonce=0, timeStamp=(new Date(0)));
     _gBlock.verify_and_mine();
     return _gBlock;

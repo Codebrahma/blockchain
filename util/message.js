@@ -43,6 +43,7 @@ const WSocket  = require('./socket.js');
     onRegister   : ()=>{},
     onUnregister : ()=>{},
     onMinerlist  : ()=>{},
+    onVersion    : ()=>{},
     onDefault    : (dt)=>{ MessagerrorHandler("Unrecognized command")(dt) },
 
     listen: function(){

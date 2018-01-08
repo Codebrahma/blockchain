@@ -13,6 +13,7 @@ const Transaction  = require('./transaction.js').Transaction;
   function BlockChain(DB_PATH){
     this._chain  = new DB(DB_PATH);
     this._wallet = Wallet;
+    this.height  = 0;
   };
 
   BlockChain.prototype = {
@@ -34,10 +35,13 @@ const Transaction  = require('./transaction.js').Transaction;
         let _gBlock = Block.getGenesisBlock();
 
         // append block to the block chain
-        return self._chain.$append(_gBlock);
+        return self.$append(_gBlock);
       };
 
-      return this._chain.$isEmpty().then(initChain);
+      return this._chain.$isEmpty()
+        .then(initChain)
+        .then(g => self.$getHeight())
+        .then(h => self.height = h);
     },
 
     /*
@@ -65,16 +69,49 @@ const Transaction  = require('./transaction.js').Transaction;
       return this._chain.$fetchLast().then(addBlock);
     },
 
-    $appendStreamBlock: function(d){
-      return this.$append(Block.deserialize(d));
+    appendStreamBlock: function(d){
+      console.log("NEW_BLOCK_RECIEVED");
+
+      this.$append(Block.deserialize(d))
+        .then(function(){
+          console.log("APPENDED_RECIEVED_BLOCK");
+        }, function(){
+          console.log("DISCARDED_RECIEVED_BLOCK");
+        });
+    },
+
+    mineTransaction: function(d, cb){
+      console.log("MINING_NEW_TRANSACTION");
+      this.$addBlock([ d ])
+        .then(function(b){
+          console.log("BLOCKCHAIN_UPDATED");
+          return cb(b);
+        })
+        .finally(function(){
+          console.log("BROADCASTING_TO_NETWORK");
+        })
+        .catch(function(e){
+          console.log("OPERATION_FAILED");
+          console.log(e);
+        });
     },
 
     $append: function(block){
+      let self = this;
       return this._chain.$verifyAndAppend(block, function(block, prev){
-        return (
+        let valid = (
           block.isValid()                 && // Valid block
           (!prev || block.isValidNext(prev)) // Valid next
-        );
+        )
+
+        if(valid){
+          self.height = self.height + 1;
+          return block;
+        };
+
+        let d = Q.defer();
+        d.reject();
+        return d.promise;
       });
     },
 
@@ -194,7 +231,7 @@ const Transaction  = require('./transaction.js').Transaction;
       let spentTXOs  = {};
 
       return this._chain.$reduce(function(block, unspentTXs){
-        // interating through all transactions in a blokck
+        // interating through all transactions in a block
         _.each(block.getTransactions(), (tx,tx_idx)=>{
           // for each output in the transaction
           _.each(tx.outputs, function(output, opt_idx){

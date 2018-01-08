@@ -9,86 +9,38 @@
   => Bank informs user on successful transaction
   => Bank informs user on his balance
 */
+
+// DEPENDENCIES
 const express    = require('express');        // call express
 const bodyParser = require('body-parser');
 
-const Messenger       = require('./util/message.js').Messenger;
-const MessageHandler  = require('./util/message.js').MessageHandler;
-const NodeList   = require('./util/nlist.js');
-const Wallet     = require('./model/wallet.js');
-const BlockChain = require('./model/blockchain.js');
-
-// NMap server
-const NMAP_HOST     = process.env.NMAP_HOST||"localhost";
-const NMAP_SPORT    = process.env.NMAP_SPORT||"9999";
-const NMAP_SADDRESS = NMAP_HOST + ":" + NMAP_SPORT;
+const Node            = require('./node.js');
+const Wallet          = require('./model/wallet.js');
 
 // Wallet server
-const WALLET_HOST    = process.env.WALLET_HOST||"localhost";
-const WALLET_HPORT   = process.env.WALLET_HPORT||8080;
-const WALLET_SPORT   = process.env.WALLET_SPORT||8081;
-const WALLET_SADDRESS= WALLET_HOST + ":" + WALLET_SPORT;
-const WALLET_HADDRESS= WALLET_HOST + ":" + WALLET_HPORT;
+const NODE_HOST     = process.env.NODE_HOST||"localhost";
+const NODE_HPORT    = process.env.NODE_HPORT||8080;
+const NODE_HADDRESS = NODE_HOST + ":" + NODE_HPORT;
 
 // Datastore path
-const WDB_PATH      = process.env.WDB_PATH || "walletdb-"+WALLET_SPORT;
-const CDB_PATH      = process.env.CDB_PATH || "chaindb-"+WALLET_SPORT;
-
-if(!process.env.BLOCK_DIFFICULTY){ throw("BLOCK_DIFFICULTY not set") }
-
-// BlockChain
-let blockchain = new BlockChain(CDB_PATH);
-blockchain.$init(); // TODO Handle chain ready!
-
+const WDB_PATH      = process.env.WDB_PATH || "walletdb-"+NODE_HPORT;
 // Initialize wallet DB
 Wallet.init(WDB_PATH);
 
-// Node list maintainer
-let nl = new NodeList(selfAddress=WALLET_SADDRESS);
+// WALLET Node on the BlockChain network
+// =============================================================================
+let walletNode = new Node(type="wallet");
+walletNode.listen();
 
-// Communication channel to talk to nmap server
-let nmapMesseger = new Messenger(WALLET_SADDRESS, NMAP_SADDRESS);
-
-// Communication channel to talk to other miners
-let myMesseger = new Messenger(WALLET_SADDRESS);
-
-nmapMesseger.$send("minerlist").then(l => nl.updateList(l))
-// Periodic Heartbeat to let nmap know you're alive
-const HEARTBEAT_DELAY = 30 * 1000;
-setInterval(()=> nmapMesseger.$send("heartbeat"), HEARTBEAT_DELAY);
-
-// Periodic update of fresh miner list from nmap
-const MINER_FETCH_DELAY = 60 * 1000;
-setInterval(() => nmapMesseger.$send("minerlist").then(l => nl.updateList(l)),
-    MINER_FETCH_DELAY);
-
-(function(){
-  // WALLET Node on the BlockChain network
-  // ===========================================================================
-  console.log("Wallet node listening");
-  walletNode = new MessageHandler(WALLET_SADDRESS);
-  walletNode.listen();
-  // Listen for block-updates and update local blockchain
-  walletNode.on("newblock", function(d){
-    // verify and update the local blockchain
-    console.log("NEW_BLOCK_RECIEVED");
-    blockchain.$appendStreamBlock(d.data).then(function(){
-      console.log("APPENDED_RECIEVED_BLOCK");
-    }, function(){
-      console.log("DISCARDED_RECIEVED_BLOCK");
-    });
-  });
-
-}());
 
 (function(){
   // WALLET_API
   // ===========================================================================
-  var APISuccess = function(res, d){
-    return res.json({ code: 200, data: d });
+  var APISuccess = function(res, m, d){
+    return res.json({ code: 200, message: m, data: d });
   };
   var APIError = function(res, m, d){
-    return res.json({ code: 500, error: m, data: d });
+    return res.json({ code: 500, message: m, data: d });
   };
 
   const app = express();
@@ -103,7 +55,7 @@ setInterval(() => nmapMesseger.$send("minerlist").then(l => nl.updateList(l)),
   // the private key is stored securely and is use to authenticate transactions
   router.post('/createWallet', function(req, res){
     Wallet.new().$init().then(function(d){
-      APISuccess(res, { walletID: d[ 0 ] })
+      APISuccess(res, "WALLET_CREATED", { walletID: d[ 0 ] })
     })
     .catch(function(e){
       APIError(res, "WALLET_CREATION_ERROR", e);
@@ -120,22 +72,37 @@ setInterval(() => nmapMesseger.$send("minerlist").then(l => nl.updateList(l)),
 
     new Wallet(data.from).$fetch()
       .then(function(w){
-        return blockchain.$newUTXOTransaction(data, w.privateKey);
+        return walletNode.blockchain.$newUTXOTransaction(data, w.privateKey);
       })
       .then(function(tx){
         // Publish to blockchain mining network
-        return nmapMesseger.$broadcast(nl, "transaction", tx.serialize());
+        return walletNode.network.$broadcast(walletNode.addressBook, "transaction", tx.serialize());
       })
       .then(function(){
-        APISuccess(res, "PROCESSING_TRANSACTION");
+        APISuccess(res, "PROCESSING_TRANSACTION", {});
       })
       .catch(function(e){
         APIError(res, "TRANSACTION_ERROR", e);
       });
   });
+
+  // Get account balance
+  router.get('/balance', function(req, res){
+    let data = {
+      address: req.query.address
+    };
+
+    walletNode.blockchain.$getBalance(data.address)
+      .then(function(b){
+        APISuccess(res, "BALANCE", { address: data.address, balance: b });
+      }, function(e){
+        APIError(res, "BALANCE_ERROR", e);
+      });
+  });
+
   app.use('/api', router);
   // START THE WALLET API SERVER
   // ===========================================================================
-  app.listen(WALLET_HPORT, WALLET_HOST);
-  console.log('Wallet ui running on port ' + WALLET_HADDRESS);
+  app.listen(NODE_HPORT, NODE_HOST);
+  console.log('Wallet ui running on port ' + NODE_HADDRESS);
 }());
