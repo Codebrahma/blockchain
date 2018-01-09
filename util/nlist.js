@@ -43,6 +43,7 @@
       for(let id in lst){
         this.register(lst[ id ]);
       }
+      return this.selfAddress;
     },
   };
 

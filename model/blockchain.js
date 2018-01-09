@@ -109,9 +109,7 @@ const Transaction  = require('./transaction.js').Transaction;
           return block;
         };
 
-        let d = Q.defer();
-        d.reject();
-        return d.promise;
+        return Q.reject();
       });
     },
 
@@ -159,18 +157,7 @@ const Transaction  = require('./transaction.js').Transaction;
                     .map(b => Block.deserialize(b["_block"]))
                     .sortBy(b => b.getHeight());
 
-      // Validate append here
-      var isValidAppend = function(b, prev){
-        let validNext = true;
-        if(prev)  validNext = (
-          b.getHeight()   === prev.getHeight() + 1 &&
-          b.getPrevHash() === prev.getHash()
-        )
-        return validNext && b.verify();
-      };
-
-      let appendedBlocks = blocks.map(b=> this._chain.$verifyAndAppend(b, isValidAppend))
-                                 .value();
+      let appendedBlocks = blocks.map(b=> this.$append(b)).value();
 
       return Q.all(appendedBlocks)
     },

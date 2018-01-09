@@ -22,6 +22,7 @@ const NMAP_HADDRESS = NMAP_HOST + ":" + NMAP_HPORT;
   nmapMsgHdlr.on("heartbeat" , (d)=> nl.register(d)  );
   nmapMsgHdlr.on("unregister", (d)=> nl.unregister(d));
   nmapMsgHdlr.on("minerlist" , (d)=> nl.list         );
+
   // nl.list
   nmapMsgHdlr.listen();
 

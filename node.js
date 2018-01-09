@@ -3,6 +3,8 @@
 */
 
 // DEPENDENCIES
+const Q               = require('Q');
+const _               = require('underscore');
 const Messenger       = require('./util/message.js').Messenger;
 const MessageHandler  = require('./util/message.js').MessageHandler;
 const NodeList        = require('./util/nlist.js');
@@ -24,19 +26,17 @@ function Node(type="miner"){
   this.address = NODE_SADDRESS;
   this.type    = type;
 
-  // BlockChain TODO: handle chain ready
-  this.blockchain = new BlockChain(DB_PATH);
-  this.blockchain.$init().then(function(){
-    console.log("Blockchain initialized :" + self.blockchain.height);
-  });
-
   // Node list maintainer
   this.addressBook = new NodeList(selfAddress=NODE_SADDRESS);
 
   // Communication channel to talk to nmap server and download nodelist
   this.network = new Messenger(NODE_SADDRESS, NMAP_SADDRESS);
-  // this.network.$send("heartbeat")
-  this.network.$send("minerlist").then(l => self.addressBook.updateList(l));
+
+  // Communication channel to talk to other miners
+  this.messenger = new Messenger(NODE_SADDRESS);
+
+  // BlockChain TODO: handle chain ready
+  this.blockchain = new BlockChain(DB_PATH);
 
   // Periodic Heartbeat to let nmap know you're alive
   const HEARTBEAT_DELAY = 30 * 1000;
@@ -47,8 +47,27 @@ function Node(type="miner"){
   setInterval(() => self.network.$send("minerlist").then(l => self.addressBook.updateList(l)),
       MINER_FETCH_DELAY);
 
-  // Communication channel to talk to other miners
-  this.messenger = new Messenger(NODE_SADDRESS);
+  // Node $init
+  self.network.$send("minerlist")
+  .then(l => Q.resolve(self.addressBook.updateList(l)) )
+  .then(d  => self.network.$send("heartbeat")          )
+  .then(d  => self.blockchain.$init()                  )
+  .then(d  => self.network.$broadcast(self.addressBook, "version"))
+  .then(function(v){
+    v = _.filter(v, d => d && d.height > self.blockchain.height);
+    if(v.length == 0) return [ ];
+    let mNode = _.max(v, (d) => d.height);
+    return self.messenger.$to(mNode.address, "blockchain", {
+      upto: self.blockchain.height
+    });
+  })
+  .then(blks => self.blockchain.$appendWithChain(blks)  )
+  .then(function(){
+    console.log("Network node initialized with genesis blockchain : " + self.blockchain.height);
+  })
+  .catch(function(e){
+    console.log("Node init error : " + e);
+  });
 };
 
 
@@ -60,12 +79,19 @@ Node.prototype.listen = function(){
   node.listen();
 
   // Node events
-  node.on("version", d => self.blockchain.height);
+  node.on("version", function(d){
+    return { height: self.blockchain.height, address: self.address };
+  });
 
   // TODO: Handle blockchain FORK
-  node.on("newblock", d => self.blockchain.appendStreamBlock(d.data));
+  node.on("newblock",    d => self.blockchain.appendStreamBlock(d.data));
 
   node.on("transaction", d => self.onTransaction(d));
+
+  node.on("blockchain",  d => {
+    console.log("Blockchain request : " + d.data.upto);
+    return self.blockchain.$getBlocksUpto(d.data.upto);
+  });
 };
 
 Node.prototype.onTransaction = () => { };

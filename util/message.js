@@ -19,16 +19,24 @@ const WSocket  = require('./socket.js');
   };
 
   Messenger.prototype = {
+    $to: function(to, cmd, data){
+      return new Messenger(this.from, to).$send(cmd, data)
+    },
     $send: function(cmd, data={}){
       console.log(cmd + " to " + this.to);
-      return this.socket.$message({ command: cmd, from: this.from, to:this.to, data:data });
+      return this.socket.$message({
+        command: cmd,
+        from   : this.from,
+        to     : this.to,
+        data   : data,
+      });
     },
     $broadcast: function(nList, cmd, data={}){
       let self = this.from;
       let broadcast = _.map(nList.list, function(d, to){
         return new Messenger(self, to).$send(cmd, data);
       });
-      return Q.all(broadcast);
+      return Q.allSettled(broadcast).then( d => _.map(d, v => v.value) );
     },
   };
 
@@ -44,6 +52,7 @@ const WSocket  = require('./socket.js');
     onUnregister : ()=>{},
     onMinerlist  : ()=>{},
     onVersion    : ()=>{},
+    onBlockchain : ()=>{},
     onDefault    : (dt)=>{ MessagerrorHandler("Unrecognized command")(dt) },
 
     listen: function(){
