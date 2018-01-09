@@ -13,6 +13,7 @@ minerNode.listen();
 
 // Custom mining logic
 minerNode.onTransaction = function(d){
+  console.log("New transaction received");
   minerNode.blockchain.mineTransaction(d.data, function(b){
     minerNode.network.$broadcast(minerNode.addressBook, "newblock", b.serialize());
   });

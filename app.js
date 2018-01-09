@@ -13,6 +13,8 @@ const net        = require('net');
 const node_id     = process.env.NODE_ID;
 const nodeAddress = "localhost:" + node_id;
 
+const DB_PATH       = process.env.DB_PATH;
+
 function exception(msg){
   return function(e){
     console.log(msg);
@@ -133,7 +135,7 @@ function initializeCLI(){
   program.parse(process.argv);
 };
 
-const blockchain = new BlockChain();
+const blockchain = new BlockChain(DB_PATH);
 initializeCLI();
 
 

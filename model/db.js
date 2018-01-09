@@ -70,6 +70,7 @@ const Block     = require('./block.js');
   */
   function ChainDB(DB_PATH){
     DB.call(this, DB_PATH);
+    console.log("Opening dB:  db/"+DB_PATH);
     this._db = levelup(encode(leveldown("db/"+DB_PATH), { valueEncoding: 'json' }));
   };
   let chainDBProto = {
@@ -164,7 +165,8 @@ const Block     = require('./block.js');
   // Database Model which stores the wallet
   function WalletDB(DB_PATH){
     DB.call(this, DB_PATH);
-    this._db = levelup(leveldown("db/"+DB_PATH));
+    console.log("Opening dB:  db/"+DB_PATH);
+    this._db = levelup(encode(leveldown("db/"+DB_PATH), { valueEncoding: 'json' }));
   };
   let walletDBProto = {
     $save: function(w){

@@ -7,7 +7,7 @@ The genesis block is associated with {0404b567f7216b4acb73d7f37bbaff70fd7e46ec77
 ### Initialize blockchain network
 This is called only once. On genesis.
 ```
-node init.js
+NODE_PORT=8081 node init.js
 ```
 
 ### Blockchain network

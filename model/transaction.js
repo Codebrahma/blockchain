@@ -43,11 +43,11 @@ _.mixin(require('underscore.deepclone'));
     this.outputs = _.map(outputs, o => new TxOutput(o.value, o.publicKey)) || [ ];
   };
   Transaction.prototype = {
-    getIId: function(){
+    getId: function(){
       return Crypto.hashify(JSON.stringify(this.serialize()));
     },
     setId : function(){
-      this.txId = this.getIId();
+      this.txId = this.getId();
       return this;
     },
     sign: function(pvtKey){

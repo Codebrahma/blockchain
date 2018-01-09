@@ -17,13 +17,15 @@ const bodyParser = require('body-parser');
 const Node            = require('./node.js');
 const Wallet          = require('./model/wallet.js');
 
+// NOde
+const NODE_PORT     = process.env.NODE_PORT||"3000";
 // Wallet server
 const NODE_HOST     = process.env.NODE_HOST||"localhost";
 const NODE_HPORT    = process.env.NODE_HPORT||8080;
 const NODE_HADDRESS = NODE_HOST + ":" + NODE_HPORT;
 
 // Datastore path
-const WDB_PATH      = process.env.WDB_PATH || "walletdb-"+NODE_HPORT;
+const WDB_PATH      = process.env.WDB_PATH || "walletdb-"+NODE_PORT;
 // Initialize wallet DB
 Wallet.init(WDB_PATH);
 

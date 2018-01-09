@@ -52,6 +52,10 @@ function Node(type="miner"){
   .then(l => Q.resolve(self.addressBook.updateList(l)) )
   .then(d  => self.network.$send("heartbeat")          )
   .then(d  => self.blockchain.$init()                  )
+  .then(function(d){
+    console.log("Block initialized with : " + self.blockchain.height);
+    return Q.resolve(d);
+  })
   .then(d  => self.network.$broadcast(self.addressBook, "version"))
   .then(function(v){
     v = _.filter(v, d => d && d.height > self.blockchain.height);

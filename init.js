@@ -1,9 +1,7 @@
 // Wallet server
-const NODE_HOST     = process.env.NODE_HOST||"localhost";
-const NODE_HPORT    = process.env.NODE_HPORT||8080;
-const NODE_HADDRESS = NODE_HOST + ":" + NODE_HPORT;
+const NODE_PORT     = process.env.NODE_PORT||"3000";
 
-const DB_PATH       = process.env.DB_PATH || "nodedb-"+NODE_HPORT;
+const DB_PATH       = process.env.DB_PATH || "nodedb-"+NODE_PORT;
 const BlockChain    = require('./model/blockchain.js');
 const Block         = require('./model/block.js');
 const Wallet        = require('./model/wallet.js');
@@ -17,6 +15,8 @@ blockchain.$init().then(function(){
     };
     // create genesis block
     let _gBlock = Block.getGenesisBlock();
+    _gBlock.mine();
+
     // append block to the block chain
     return blockchain.$append(_gBlock).then(function(){
       console.log("Blockchian initialized");
@@ -25,7 +25,7 @@ blockchain.$init().then(function(){
 
 {
   // Datastore path
-  const WDB_PATH      = process.env.WDB_PATH || "walletdb-"+NODE_HPORT;
+  const WDB_PATH      = process.env.WDB_PATH || "walletdb-"+NODE_PORT;
   // Initialize wallet DB
   Wallet.init(WDB_PATH);
   // Initialize walletID
