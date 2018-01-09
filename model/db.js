@@ -20,7 +20,6 @@ const Block     = require('./block.js');
     if(!DB_PATH){
       throw("DB_PATH not SET");
     };
-    this._db = levelup(encode(leveldown(DB_PATH), { valueEncoding: 'json' }));
     return this;
   };
 
@@ -71,6 +70,7 @@ const Block     = require('./block.js');
   */
   function ChainDB(DB_PATH){
     DB.call(this, DB_PATH);
+    this._db = levelup(encode(leveldown(DB_PATH), { valueEncoding: 'json' }));
   };
   let chainDBProto = {
     // Fetch key as a block instance
@@ -164,6 +164,7 @@ const Block     = require('./block.js');
   // Database Model which stores the wallet
   function WalletDB(DB_PATH){
     DB.call(this, DB_PATH);
+    this._db = levelup(leveldown(DB_PATH));
   };
   let walletDBProto = {
     $save: function(w){
