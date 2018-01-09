@@ -71,11 +71,10 @@ const Transaction  = require('./transaction.js').Transaction;
 
     appendStreamBlock: function(d){
       console.log("NEW_BLOCK_RECIEVED");
-
       this.$append(Block.deserialize(d))
         .then(function(){
           console.log("APPENDED_RECIEVED_BLOCK");
-        }, function(){
+        }).catch(function(e){
           console.log("DISCARDED_RECIEVED_BLOCK");
         });
     },
@@ -103,12 +102,10 @@ const Transaction  = require('./transaction.js').Transaction;
           block.isValid()                 && // Valid block
           (!prev || block.isValidNext(prev)) // Valid next
         )
-
         if(valid){
           self.height = self.height + 1;
           return block;
         };
-
         return Q.reject();
       });
     },

@@ -42,7 +42,7 @@ const Q    = require('Q');
           resp.then(function(r){
             r = r || { };
             r = JSON.stringify(r);
-            socket.write(r);
+            socket.write(r + "\n");
           });
         } catch(e){ SocketErrorHandler("Server message handler failed")( e ) };
       });
@@ -72,12 +72,15 @@ const Q    = require('Q');
 
     let self = this;
     this.client.connect(this.port, this.host, function(){
-      self.client.write(JSON.stringify(dt));
+      self.client.write(JSON.stringify(dt) + "\n");
     });
     this.client.on('data', function(data){
       var data = data.toString();
-      console.log("Server responded with : " + data);
-      def.resolve(JSON.parse(data));
+      // console.log("Server responded with : " + data);
+      try{
+        data = JSON.parse(data);
+        def.resolve(data);
+      } catch(e){ SocketErrorHandler("Unable to parse server response")( e ) };
       self.client.destroy();
     });
     return def.promise;

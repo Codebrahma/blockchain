@@ -61,13 +61,7 @@ function Node(type="miner"){
       upto: self.blockchain.height
     });
   })
-  .then(blks => self.blockchain.$appendWithChain(blks)  )
-  .then(function(){
-    console.log("Network node initialized with genesis blockchain : " + self.blockchain.height);
-  })
-  .catch(function(e){
-    console.log("Node init error : " + e);
-  });
+  .then(blks => self.blockchain.$appendWithChain(blks)  );
 };
 
 
@@ -89,7 +83,6 @@ Node.prototype.listen = function(){
   node.on("transaction", d => self.onTransaction(d));
 
   node.on("blockchain",  d => {
-    console.log("Blockchain request : " + d.data.upto);
     return self.blockchain.$getBlocksUpto(d.data.upto);
   });
 };
