@@ -10,15 +10,18 @@ const MessageHandler  = require('./util/message.js').MessageHandler;
 const NodeList        = require('./util/nlist.js');
 const BlockChain      = require('./model/blockchain.js');
 
-const NODE_HOST     = process.env.NODE_HOST||"localhost";
-const NODE_PORT     = process.env.NODE_PORT||"3000";
-const NODE_SADDRESS = NODE_HOST + ":" + NODE_PORT;
+
+const node_id       = process.env.NODE_ID;
+const NODE_HOST     = process.env.NODE_HOST || "localhost";
+const NODE_SADDRESS = NODE_HOST + ":" + node_id;
+const DB_PATH       = process.env.DB_PATH + '/' + node_id;
+
+//FOR NMAP ONLY!!
 const NMAP_HOST     = process.env.NMAP_HOST||"localhost";
 const NMAP_SPORT    = process.env.NMAP_SPORT||"9999";
-const NMAP_HPORT    = process.env.NMAP_SPORT||"8888";
+const NMAP_HPORT    = process.env.NMAP_HPORT||"8888";
 const NMAP_SADDRESS = NMAP_HOST + ":" + NMAP_SPORT;
 const NMAP_HADDRESS = NMAP_HOST + ":" + NMAP_HPORT;
-const DB_PATH       = process.env.DB_PATH || "nodedb-"+NODE_PORT;
 
 function Node(type="miner"){
   let self = this;

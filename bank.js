@@ -21,7 +21,7 @@ const Wallet          = require('./model/wallet.js');
 const NODE_PORT     = process.env.NODE_PORT||"3000";
 // Wallet server
 const NODE_HOST     = process.env.NODE_HOST||"localhost";
-const NODE_HPORT    = process.env.NODE_HPORT||8080;
+const NODE_HPORT    = process.env.NODE_HPORT|| parseInt(NODE_PORT)+100;
 const NODE_HADDRESS = NODE_HOST + ":" + NODE_HPORT;
 
 // Datastore path

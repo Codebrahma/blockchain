@@ -1,8 +1,6 @@
 const _         = require('underscore');
 const Q         = require('Q');
-const levelup   = require('levelup');
-const leveldown = require('leveldown');
-const encode    = require('encoding-down');
+const store     = require('scattered-store');
 
 const Block     = require('./block.js');
 
@@ -20,6 +18,13 @@ const Block     = require('./block.js');
     if(!DB_PATH){
       throw("DB_PATH not SET");
     };
+    this._db = store.create(DB_PATH, (err) =>{
+      if(err) {
+        console.log(err)
+      } else {
+        console.log("DB Opeened" + DB_PATH);
+      }
+    })
     return this;
   };
 
@@ -31,6 +36,7 @@ const Block     = require('./block.js');
       var def = Q.defer();
       // Fetch element by key from DB
       this._db.get(k).then(function(v){
+        if(!v) throw("Value is undefined");
         return def.resolve(v);
       })
       // Call default exception hander and reject
@@ -47,7 +53,7 @@ const Block     = require('./block.js');
     $put: function(k, v){
       var def = Q.defer();
       // Set element by key,value in DB
-      this._db.put(k, v)
+      this._db.set(k, v)
       .then(function(){
         return def.resolve([k,v]);
       })
@@ -69,9 +75,7 @@ const Block     = require('./block.js');
     hash_n => Serialized Block n
   */
   function ChainDB(DB_PATH){
-    DB.call(this, DB_PATH);
-    console.log("Opening dB:  db/"+DB_PATH);
-    this._db = levelup(encode(leveldown("db/"+DB_PATH), { valueEncoding: 'json' }));
+    DB.call(this, DB_PATH+'/chain');
   };
   let chainDBProto = {
     // Fetch key as a block instance
@@ -90,8 +94,8 @@ const Block     = require('./block.js');
     // Check if the chain is empty { Chain is empty if 'TIP' is not set }
     $isEmpty: function(){
       var def = Q.defer();
-      this._db.get('TIP', function(error, value){
-        let empty = error ? true : false;
+      this._db.get('TIP').then(function(value){
+        let empty = value ? false : true;
         return def.resolve(empty);
       });
       return def.promise;
@@ -164,9 +168,7 @@ const Block     = require('./block.js');
 
   // Database Model which stores the wallet
   function WalletDB(DB_PATH){
-    DB.call(this, DB_PATH);
-    console.log("Opening dB:  db/"+DB_PATH);
-    this._db = levelup(encode(leveldown("db/"+DB_PATH), { valueEncoding: 'json' }));
+    DB.call(this, DB_PATH+'/wallet');
   };
   let walletDBProto = {
     $save: function(w){

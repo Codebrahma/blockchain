@@ -67,6 +67,7 @@ const WSocket  = require('./socket.js');
     },
 
     onMessage: function(dt){
+      console.log(dt);
       if(!dt.command || !dt.from || !dt.to){
         MessagerrorHandler("Invalid message format")(dt);
         return;

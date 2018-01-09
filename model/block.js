@@ -104,7 +104,7 @@ const Transaction = require('./transaction.js').Transaction;
     },
 
     mine: function(){
-      for(let _nonce = this._block.nonce ; _nonce < MAX_NONCE && !this.validate(); _nonce++){
+      for(let _nonce = 0 ; _nonce < MAX_NONCE && !this.validate(); _nonce++){
         this._block.nonce = _nonce;
       };
       this._block.hash = this.hashify();
@@ -162,7 +162,7 @@ const Transaction = require('./transaction.js').Transaction;
 
   Block.getGenesisBlock =  function(){
     let cbTx = Transaction.newCoinbaseTx(to=GENESIS_USER);
-    let _gBlock = new Block(height=1,transactions=[cbTx],prevBlockHash="", difficulty=5, nonce=2098277, timeStamp=(new Date(0)));
+    let _gBlock = new Block(height=1,transactions=[cbTx],prevBlockHash="", difficulty=BLOCK_DIFFICULTY, nonce=2098277, timeStamp=(new Date(0)));
     _gBlock.verify_and_mine();
     return _gBlock;
   };

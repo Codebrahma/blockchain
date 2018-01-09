@@ -9,11 +9,24 @@ const BlockChain = require('./model/blockchain.js');
 const Wallet     = require('./model/wallet.js');
 const program    = require('commander');
 const net        = require('net');
+const _          = require('underscore');
 
-const node_id     = process.env.NODE_ID;
-const nodeAddress = "localhost:" + node_id;
 
-const DB_PATH       = process.env.DB_PATH;
+const node_id       = process.env.NODE_ID;
+const NODE_HOST     = process.env.NODE_HOST || "localhost";
+const NODE_SADDRESS = NODE_HOST + ":" + node_id;
+const DB_PATH       = process.env.DB_PATH + '/' + node_id;
+
+//FOR NMAP ONLY!!
+const NMAP_HOST     = process.env.NMAP_HOST||"localhost";
+const NMAP_SPORT    = process.env.NMAP_SPORT||"9999";
+const NMAP_HPORT    = process.env.NMAP_HPORT||"8888";
+const NMAP_SADDRESS = NMAP_HOST + ":" + NMAP_SPORT;
+const NMAP_HADDRESS = NMAP_HOST + ":" + NMAP_HPORT;
+
+
+const Messenger       = require('./util/message.js').Messenger;
+const NodeList        = require('./util/nlist.js');
 
 function exception(msg){
   return function(e){
@@ -37,6 +50,7 @@ function initializeCLI(){
     .description('print the blockchain')
     .option('-v, --verbose [va]', 'Verbose printing true?')
     .action(function(req, options){
+      const blockchain = new BlockChain(DB_PATH);
       blockchain.$print(options.verbose)
         .then(success("SUCCESS Chain Print"),exception("FAILED Chain Print"));
     });
@@ -54,12 +68,25 @@ function initializeCLI(){
         amount : req.amount,
       };
 
-      new Wallet(data.from, DB_PATH="/wallet").$fetch.then(function(w){
-        blockchain.$newUTXOTransaction(data, w.privateKey).then((tx)=>{
-          sendTo(knownNodes[0], {command: "newTx", payload: tx});
-        });
-      })
-      //.then(success("SUCCESS Add Block"), exception("FAILED Add Block"));
+      Wallet.init(DB_PATH);
+      Wallet.fetch(data.from).then((w)=>{
+        const blockchain = new BlockChain(DB_PATH);
+        return blockchain.$newUTXOTransaction(data, w.privateKey)
+      }).then((tx)=>{
+        let network     = new Messenger(NODE_SADDRESS, NMAP_SADDRESS)
+        
+        network.$send("minerlist")
+          .then(l => {
+           if(_.isEmpty(l)) {
+             console.log("No miners available");
+             return ;
+            }
+           let randomNode =  _.keys(l)[ 0 ];
+           let messenger  = new Messenger(NODE_SADDRESS, randomNode);
+           console.log(randomNode);
+           messenger.$send("transaction", tx.serialize()).then(success("Transaction sent"));
+          });
+      });
     });
 
   program
@@ -67,6 +94,7 @@ function initializeCLI(){
     .description('balance of the address')
     .option('-a, --address [address]', 'balance of?')
     .action((req, options) => {
+      const blockchain = new BlockChain(DB_PATH);
       blockchain.$getBalance(options.address)
         .then(function(b){
           console.log("BALANCE of " + options.address + " is " + b);
@@ -77,10 +105,13 @@ function initializeCLI(){
     .command('createWallet')
     .description('make a new wallet')
     .action((req, options) => {
-      new Wallet().$init().then(function(d){
-        console.log("This is your public key store it safely");
-        console.log(d[0]);
-      }, exception("FAILED Create Wallet"));
+      Wallet.init(DB_PATH);
+      new Wallet().$save().then(function(d){
+        console.log("WALLET_CREATED  " +  d[ 0 ] );
+      })
+      .catch(function(e){
+        console.log("WALLET_CREATION_ERROR");
+      });
     });
 
   program
@@ -88,7 +119,8 @@ function initializeCLI(){
     .description('make a new wallet')
     .option('-k, --key [key]', 'public key')
     .action((req, options) => {
-      Wallet.$fetch(options.key).then(function(w){
+      Wallet.init(DB_PATH);
+      Wallet.fetch(options.key).then(function(w){
         console.log("Your private key is");
         console.log(w.privateKey);
       });
@@ -101,119 +133,15 @@ function initializeCLI(){
     .action((req, options)=>{
       var MA = options.minerAddress;
       process.env.BLOCKCHAIN_MINER = MA;
+      const blockchain = new BlockChain(DB_PATH);
       if(MA){
-        blockchain.$init().then(success("Blockchain genesis block initialized"));
+        blockchain.$createGenesis().then(success("Blockchain genesis block initialized"))
+        .catch((e)=>console.log(e));
       }
     });
 
-  program
-    .command('startNode [options]')
-    .description('start the node')
-    .option('-MA, --minerAddress [MA]', 'miner address')
-    .action((req, options)=>{
-      console.log(nodeAddress);
-
-      var knownNodes  = [];
-      knownNodes[0]   = "localhost:3000";
-      var MA          = options.minerAddress;
-
-      var server = net.createServer(function(socket) {
-        socket.on('data', function(data){
-          var data = data.toString();
-          console.log('Got Data');
-          console.log(data);
-          handleMsg(JSON.parse(data));
-        });
-      });
-
-      server.listen(node_id, '127.0.0.1');
-      if (nodeAddress != knownNodes[0]) {
-        sendVersion(knownNodes[0]);
-      }
-    });
 
   program.parse(process.argv);
 };
 
-const blockchain = new BlockChain(DB_PATH);
 initializeCLI();
-
-
-function sendTo(to, data){
-  to = to.split(':')
-  var client = new net.Socket();
-  client.connect(to[1], to[0], function () {
-    client.write(JSON.stringify(data));
-  });
-}
-
-
-//SEND version from one node to the other and make then download the chain
-function sendVersion(to){
-  to = to.split(':')
-  var client = new net.Socket();
-  client.connect(to[1], to[0], function() {
-    console.log('Connected');
-
-    blockchain.$getHeight().then((height)=>{
-      var result = {command: "version", payload: {height: height, from: nodeAddress}}
-      client.write(JSON.stringify(result));
-    });
-
-    client.on('data', function (data) {
-      console.log(data.toString());
-    });
-  });
-}
-
-function handleMsg(msg){
-  switch(msg.command){
-    case "version":
-      handleVersion(msg.payload);
-    case "getBlocks":
-      handlegetBlocks(msg.payload);
-    case "newTx":
-      handlenewTx(msg.payload);
-  }
-}
-
-function handleVersion(payload){
-  blockchain.$getHeight().then((myHeight)=>{
-    console.log(myHeight);
-    if(myHeight < payload.height){
-      getBlocks(payload.from);
-    } else if(myHeight > payload.height) {
-      sendVersion(payload.from);
-    }
-  });
-}
-
-function getBlocks(from){
-  from = from.split(':')
-  var client = new net.Socket();
-  client.connect(to[1], to[0], function() {
-    console.log('Connected');
-
-    blockchain.$getHeight().then((height)=>{
-      var result = {command: "getBlocks", payload: {height: height, from: nodeAddress}}
-      client.write(JSON.stringify(result));
-    });
-  });
-}
-
-function handlegetBlocks(payload){
-  var client = new net.Socket();
-  var to = payload.from.split(':');
-  console.log(to);
-  blockchain.$getBlocksUpto(payload.height).then((blocks)=>{
-    client.connect(to[1], to[0], function() {
-      var result = {command: "sentBlocks", payload: {blocks: blocks, from: nodeAddress}}
-      client.write(JSON.stringify(result));
-      console.log("fix");
-    });
-  }); ;
-}
-
-function handlenewTx(payload){
-  blockchain.$addBlock(payload);
-}

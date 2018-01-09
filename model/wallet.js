@@ -3,20 +3,23 @@ const Elliptic  = require('../util/elliptic.js');
 
 (function(){
   function Wallet(pub, priv){
-    this.pubKey     = pub;
-    this.privateKey = priv;
+    var key ;
+    if(!pub) key = Elliptic.ec.genKeyPair();
+
+    this.pubKey     = pub  || key.getPublic().encode('hex');
+    this.privateKey = priv || key.getPrivate('hex');
+    
     return this;
   };
-  Wallet.prototype = {
-    $init: function(){
-      return Wallet._db.$save(this);
-    },
-    $fetch: function(){
-      let self = this;
-      return Wallet._db.$get(this.pubKey).then(function(v){
-        self.privateKey = v;
-        return self;
+
+  Wallet.fetch = function(pubKey){
+      return Wallet._db.$get(pubKey).then((privKey)=>{
+        return new Wallet(pubKey, privKey)
       });
+  };
+  Wallet.prototype = {
+    $save: function(){
+      return Wallet._db.$save(this);
     },
   };
 

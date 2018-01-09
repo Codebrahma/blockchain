@@ -27,14 +27,30 @@ const Transaction  = require('./transaction.js').Transaction;
     $init: function(){
       var self = this;
 
-      var initChain = function(empty){
-        return Q();
-      };
-
       return this._chain.$isEmpty()
-        .then(initChain)
         .then(g => self.$getHeight())
         .then(h => self.height = h);
+    },
+
+    $createGenesis: function(){
+      let self = this;
+      return self.$init().then(function(){
+        if(self.height > 0){
+          console.log("Blockchain already initialized");
+          return;
+        };
+        // create genesis block
+        console.log("1");
+        let _gBlock = Block.getGenesisBlock();
+        console.log("2");
+        _gBlock.mine();
+        console.log("3");
+
+        // append block to the block chain
+        return self.$append(_gBlock).then(function(){
+          console.log("Blockchian initialized");
+        });
+      });
     },
 
     /*
