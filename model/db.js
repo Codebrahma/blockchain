@@ -10,8 +10,8 @@ const Block     = require('./block.js');
   function DBExceptionHandler(e){
     if(e){
       console.log("DATABASE ERROR: " + e);
-      console.error(e);
-      console.trace();
+      // console.error(e);
+      // console.trace();
     };
   };
 

@@ -28,14 +28,7 @@ const Transaction  = require('./transaction.js').Transaction;
       var self = this;
 
       var initChain = function(empty){
-        // do nothing if chain not empty
-        if(!empty) return Q();
-
-        // create genesis block
-        let _gBlock = Block.getGenesisBlock();
-
-        // append block to the block chain
-        return self.$append(_gBlock);
+        return Q();
       };
 
       return this._chain.$isEmpty()
