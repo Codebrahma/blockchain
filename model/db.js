@@ -1,5 +1,5 @@
 const _         = require('underscore');
-const Q         = require('Q');
+const Q         = require('q');
 const store     = require('scattered-store');
 
 const Block     = require('./block.js');

@@ -3,7 +3,7 @@
 */
 
 // DEPENDENCIES
-const Q               = require('Q');
+const Q               = require('q');
 const _               = require('underscore');
 const Messenger       = require('./util/message.js').Messenger;
 const MessageHandler  = require('./util/message.js').MessageHandler;

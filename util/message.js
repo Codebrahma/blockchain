@@ -1,4 +1,4 @@
-const Q        = require('Q');
+const Q        = require('q');
 const _        = require('underscore');
 const WSocket  = require('./socket.js');
 

@@ -3,7 +3,7 @@
   address : 127.0.0.1:9000
 */
 const net  = require('net');
-const Q    = require('Q');
+const Q    = require('q');
 (function(){
 
   function SocketErrorHandler(type){

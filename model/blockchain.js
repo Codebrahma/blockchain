@@ -1,5 +1,5 @@
 const _       = require('underscore');
-const Q       = require('Q');
+const Q       = require('q');
 
 const DB      = require('./db.js').ChainDB;
 const Block   = require('./block.js');
