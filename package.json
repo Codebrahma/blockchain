@@ -20,7 +20,6 @@
   "homepage": "https://github.com/Codebrahma/blockchain#readme",
   "dependencies": {
     "commander": "^2.12.2",
-    "crypto": "^1.0.1",
     "elliptic": "^6.4.0",
     "encoding-down": "^3.0.1",
     "express": "^4.16.2",
