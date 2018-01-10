@@ -6,6 +6,8 @@ const Elliptic  = require('../util/elliptic.js');
 const Constants   = require('./constants.js');
 const Transaction = require('./transaction.js').Transaction;
 
+const logem       = require('logem');
+
 (function(){
 
   const MAX_NONCE        = 9223372036854776000; // MaxInt64 = 2^63 - 1
@@ -126,15 +128,15 @@ const Transaction = require('./transaction.js').Transaction;
 
     print: function(verbose){
       if(verbose){
-        console.log("Hash          : " + this._block.hash);
-        console.log("Transactions  : " + JSON.stringify(this._block.transactions));
-        console.log("PrevBlockHash : " + this._block.prevBlockHash);
-        console.log("Nonce         : " + this._block.nonce);
-        console.log("Difficulty    : " + this._block.difficulty);
-        console.log("Time Stamp    : " + this._block.timeStamp);
-        console.log("Height        : " + this._block.height);
-        console.log("Valid?        : " + this.isValid());
-        console.log("---------------------------------------------------------------------------------");
+        logem.info("Hash          : " + this._block.hash);
+        logem.info("Transactions  : " + JSON.stringify(this._block.transactions));
+        logem.info("PrevBlockHash : " + this._block.prevBlockHash);
+        logem.info("Nonce         : " + this._block.nonce);
+        logem.info("Difficulty    : " + this._block.difficulty);
+        logem.info("Time Stamp    : " + this._block.timeStamp);
+        logem.info("Height        : " + this._block.height);
+        logem.info("Valid?        : " + this.isValid());
+        logem.info("---------------------------------------------------------------------------------");
       } else {
         process.stdout.write(JSON.stringify(this._block.transactions));
         this.getPrevHash() ? process.stdout.write(" =>\n") : process.stdout.write(" ||\n");

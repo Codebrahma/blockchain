@@ -1,5 +1,6 @@
 const _       = require('underscore');
 const Q       = require('q');
+const logem   = require('logem');
 
 const DB      = require('./db.js').ChainDB;
 const Block   = require('./block.js');
@@ -36,19 +37,19 @@ const Transaction  = require('./transaction.js').Transaction;
       let self = this;
       return self.$init().then(function(){
         if(self.height > 0){
-          console.log("Blockchain already initialized");
+          logem.debug("Blockchain already initialized");
           return;
         };
         // create genesis block
-        console.log("1");
+        logem.debug("1");
         let _gBlock = Block.getGenesisBlock();
-        console.log("2");
+        logem.debug("2");
         _gBlock.mine();
-        console.log("3");
+        logem.debug("3");
 
         // append block to the block chain
         return self.$append(_gBlock).then(function(){
-          console.log("Blockchian initialized");
+          logem.debug("Blockchian initialized");
         });
       });
     },
@@ -79,28 +80,28 @@ const Transaction  = require('./transaction.js').Transaction;
     },
 
     appendStreamBlock: function(d){
-      console.log("NEW_BLOCK_RECIEVED");
+      logem.debug("NEW_BLOCK_RECIEVED");
       this.$append(Block.deserialize(d))
         .then(function(){
-          console.log("APPENDED_RECIEVED_BLOCK");
+          logem.debug("APPENDED_RECIEVED_BLOCK");
         }).catch(function(e){
-          console.log("DISCARDED_RECIEVED_BLOCK");
+          logem.error("DISCARDED_RECIEVED_BLOCK");
         });
     },
 
     mineTransaction: function(d, cb){
-      console.log("MINING_NEW_TRANSACTION");
+      logem.debug("MINING_NEW_TRANSACTION");
       this.$addBlock([ d ])
         .then(function(b){
-          console.log("BLOCKCHAIN_UPDATED");
+          logem.debug("BLOCKCHAIN_UPDATED");
           return cb(b);
         })
         .finally(function(){
-          console.log("BROADCASTING_TO_NETWORK");
+          logem.debug("BROADCASTING_TO_NETWORK");
         })
         .catch(function(e){
-          console.log("OPERATION_FAILED");
-          console.log(e);
+          logem.error("OPERATION_FAILED");
+          logem.error(e);
         });
     },
 

@@ -1,6 +1,7 @@
 const Q        = require('q');
 const _        = require('underscore');
 const WSocket  = require('./socket.js');
+const logem    = require('logem');
 
 (function(){
 
@@ -8,7 +9,7 @@ const WSocket  = require('./socket.js');
 
   function MessagerrorHandler(type){
     return function(e){
-      console.log("Messaging Error - " + type + " : " + e);
+      logem.error("Messaging Error - " + type + " : " + e);
     };
   };
 
@@ -23,7 +24,7 @@ const WSocket  = require('./socket.js');
       return new Messenger(this.from, to).$send(cmd, data)
     },
     $send: function(cmd, data={}){
-      console.log(cmd + " to " + this.to);
+      logem.debug(cmd + " to " + this.to);
       return this.socket.$message({
         command: cmd,
         from   : this.from,
@@ -67,14 +68,14 @@ const WSocket  = require('./socket.js');
     },
 
     onMessage: function(dt){
-      console.log(dt);
+      logem.debug(dt);
       if(!dt.command || !dt.from || !dt.to){
         MessagerrorHandler("Invalid message format")(dt);
         return;
       };
       let cmd = dt.command;
       let fn  = this[ "on" + capitalize(cmd) ];
-      console.log(cmd + " from " + dt.from);
+      logem.debug(cmd + " from " + dt.from);
       return ( fn ? fn(dt) : MessagerrorHandler("Handler missing")(dt) );
     }
   };

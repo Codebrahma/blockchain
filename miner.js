@@ -4,6 +4,7 @@
 
 // DEPENDENCIES
 const Node            = require('./node.js');
+const logem           = require('logem');
 
 // TODO: REQUIRES  TO BE SET Handle cleanly!
 if(!process.env.BLOCKCHAIN_MINER){ throw("BLOCKCHAIN_MINER not set") }
@@ -13,7 +14,7 @@ minerNode.listen();
 
 // Custom mining logic
 minerNode.onTransaction = function(d){
-  console.log("New transaction received");
+  logem.debug("New transaction received");
   minerNode.blockchain.mineTransaction(d.data, function(b){
     minerNode.network.$broadcast(minerNode.addressBook, "newblock", b.serialize());
   });

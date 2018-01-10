@@ -29,3 +29,9 @@ NODE_ID=3000 DB_PATH=./db BLOCKCHAIN_MINER=[GENESIS_MINER] node app.js add --fro
 NODE_ID=3000 DB_PATH=./db BLOCKCHAIN_MINER=[GENESIS_MINER] node app.js checkBalance --address [BLOCKCHAIN_MINER]
 NODE_ID=3001 DB_PATH=./db BLOCKCHAIN_MINER=[MINER_1] node app.js checkBalance --address [MINER_1]
 ```
+## Logging
+
+We are using [logem](https://github.com/Codebrahma/logem), codebrahma's own Opinionated logger based on top of winston with Papertrail integration. To see debug logs you may start any command with LOG_LEVEL as debug
+```
+LOG_LEVEL=debug npm run nmap
+```

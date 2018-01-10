@@ -9,6 +9,7 @@ const Messenger       = require('./util/message.js').Messenger;
 const MessageHandler  = require('./util/message.js').MessageHandler;
 const NodeList        = require('./util/nlist.js');
 const BlockChain      = require('./model/blockchain.js');
+const logem           = require('logem');
 
 
 const node_id       = process.env.NODE_ID;
@@ -56,7 +57,7 @@ function Node(type="miner"){
   .then(d  => self.network.$send("heartbeat")          )
   .then(d  => self.blockchain.$init()                  )
   .then(function(d){
-    console.log("Block initialized with : " + self.blockchain.height);
+    logem.debug("Block initialized with : " + self.blockchain.height);
     return Q.resolve(d);
   })
   .then(d  => self.network.$broadcast(self.addressBook, "version"))
@@ -75,7 +76,7 @@ function Node(type="miner"){
 Node.prototype.listen = function(){
   let self = this;
 
-  console.log("Node now online :" + this.address);
+  logem.debug("Node now online :" + this.address);
   let node = new MessageHandler(this.address);
   node.listen();
 
