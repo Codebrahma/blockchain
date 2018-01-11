@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "rm -rf ./testdb/3000/*; DB_PATH=./testdb/3000 mocha spec/*",
+    "test": "rm -rf ./testdb/3000/*; mocha spec/*",
     "nmap": "node nmap.js"
   },
   "repository": {
