@@ -1,3 +1,5 @@
+const logem = require('logem');
+
 (function(){
   /*
     This service acts as a local address book for miners in the network
@@ -20,14 +22,14 @@
         return;
       this.list[dt.from] = dt;
       this.list[dt.from].requestTime = new Date();
-      console.log("Registered node : " + dt.from);
+      logem.debug("Registered node : " + dt.from);
     },
     unregister: function(dt){
       delete this.list[dt.from];
-      console.log("Removed node : " + dt.from);
+      logem.debug("Removed node : " + dt.from);
     },
     unregisterInActive: function(){
-      console.log("Inactive connections being removed");
+      logem.debug("Inactive connections being removed");
       let currentTime = new Date();
       let nodes = Object.keys(this.list);
       for(let nid in nodes){
@@ -35,7 +37,7 @@
         let node    = this.list[address];
         if(Math.abs(currentTime - node.requestTime) > this.delay){
           delete this.list[address];
-          console.log("Removed node : " + address);
+          logem.debug("Removed node : " + address);
         };
       };
     },

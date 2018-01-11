@@ -3,12 +3,14 @@
   address : 127.0.0.1:9000
 */
 const net  = require('net');
-const Q    = require('Q');
+const Q    = require('q');
+const logem = require('logem');
+
 (function(){
 
   function SocketErrorHandler(type){
     return function(e){
-      console.log("Socket Error - " + type + " : " + e);
+      logem.error("Socket Error - " + type + " : " + e);
     };
   };
 

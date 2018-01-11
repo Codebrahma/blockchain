@@ -1,7 +1,6 @@
 node_modules/*
 db/*
 !db/.DS_Store
-package-lock.json
 model/db/
 .vscode
 testdb/*

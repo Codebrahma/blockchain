@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "rm -rf ./testdb/3000/*; DB_PATH=./testdb/3000 mocha spec/*"
+    "test": "rm -rf ./testdb/3000/*; DB_PATH=./testdb/3000 mocha spec/*",
+    "nmap": "node nmap.js"
   },
   "repository": {
     "type": "git",
@@ -19,13 +20,13 @@
   "homepage": "https://github.com/Codebrahma/blockchain#readme",
   "dependencies": {
     "commander": "^2.12.2",
-    "crypto": "^1.0.1",
     "elliptic": "^6.4.0",
     "encoding-down": "^3.0.1",
     "express": "^4.16.2",
     "lev": "^3.3.1",
     "leveldown": "^2.1.1",
     "levelup": "^2.0.1",
+    "logem": "^1.0.0",
     "md5": "^2.2.1",
     "q": "^1.5.1",
     "scattered-store": "^1.0.0",

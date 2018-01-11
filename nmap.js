@@ -5,6 +5,7 @@
 const MessageHandler  = require('./util/message.js').MessageHandler;
 const NodeList        = require('./util/nlist.js');
 const http            = require('http');
+const logem           = require('logem');
 
 const NMAP_HOST  = process.env.NMAP_HOST    ||"localhost";
 const NMAP_SPORT = process.env.NMAP_SPORT   ||"9999";
@@ -16,7 +17,7 @@ const NMAP_HADDRESS = NMAP_HOST + ":" + NMAP_HPORT;
 (function(){
   let nl = new NodeList(selfAddress=NMAP_SADDRESS, INACTIVITY=180 * 1000);
   // socket => register / unregister / heartbeat
-  console.log("NMAP listening");
+  logem.debug("NMAP listening");
   let nmapMsgHdlr = new MessageHandler(NMAP_SADDRESS);
   nmapMsgHdlr.on("register"  , (d)=> nl.register(d)  );
   nmapMsgHdlr.on("heartbeat" , (d)=> nl.register(d)  );

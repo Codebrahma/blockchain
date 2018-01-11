@@ -1,13 +1,13 @@
 const _         = require('underscore');
-const Q         = require('Q');
+const Q         = require('q');
 const store     = require('scattered-store');
-
+const logem     = require('logem');
 const Block     = require('./block.js');
 
 (function(){
   function DBExceptionHandler(e){
     if(e){
-      console.log("DATABASE ERROR: " + e);
+      logem.error("DATABASE ERROR: " + e);
       // console.error(e);
       // console.trace();
     };
@@ -20,9 +20,9 @@ const Block     = require('./block.js');
     };
     this._db = store.create(DB_PATH, (err) =>{
       if(err) {
-        console.log(err)
+        logem.error(err)
       } else {
-        console.log("DB Opeened" + DB_PATH);
+        logem.debug("DB Opened" + DB_PATH);
       }
     })
     return this;

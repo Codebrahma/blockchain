@@ -10,6 +10,7 @@ const Wallet     = require('./model/wallet.js');
 const program    = require('commander');
 const net        = require('net');
 const _          = require('underscore');
+const logem      = require('logem');
 
 
 const node_id       = process.env.NODE_ID;
@@ -30,17 +31,17 @@ const NodeList        = require('./util/nlist.js');
 
 function exception(msg){
   return function(e){
-    console.log(msg);
-    console.error(e);
+    logem.error(msg);
+    logem.error(e);
     console.trace();
   };
 };
 function success(msg){
-  return function(){ console.log(msg); };
+  return function(){ logem.debug(msg); };
 };
 
 function initializeCLI(){
-  console.log("INITIALIZING CLI");
+  logem.debug("INITIALIZING CLI");
 
   program
     .version('0.0.1')
@@ -136,7 +137,7 @@ function initializeCLI(){
       const blockchain = new BlockChain(DB_PATH);
       if(MA){
         blockchain.$createGenesis().then(success("Blockchain genesis block initialized"))
-        .catch((e)=>console.log(e));
+        .catch((e)=>logem.error(e));
       }
     });
 
