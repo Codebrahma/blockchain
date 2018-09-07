@@ -3,32 +3,34 @@ const expect = require('chai').expect
 
 const BlockChain = require('../model/blockchain.js');
 const Wallet     = require('../model/wallet.js');
-const Transaction= require('../model/Transaction.js').Transaction;
+const Transaction= require('../model/transaction.js').Transaction;
 
 describe('BlockChain', () => {
 
   let u1 = new Wallet();
   let u2 = new Wallet();
-
+  
   {
     process.env.SUBSIDY          = 5;
     process.env.BLOCK_DIFFICULTY = 2;
     process.env.BLOCKCHAIN_MINER = u1.pubKey;
+    process.env.DB_PATH = './testdb/3000';
   };
-
-  let bc = new BlockChain();
+  const DB_PATH = process.env.DB_PATH;
+  let bc = new BlockChain(DB_PATH);
 
 
   describe("createWallet", () => {
     it('should generate and store public and private keys', () => {
-      return u1.$init()
-               .then(function(){ u2.$init() })
+      Wallet.init(DB_PATH);
+      return u1.$save()
+               .then(function(){ u2.$save() })
                .then(function(){
                   expect(u1.pubKey).to.exist;
                   expect(u1.privateKey).to.exist;
                   expect(u2.pubKey).to.exist;
                   expect(u2.privateKey).to.exist;
-                  return Wallet.$fetch(u1.pubKey);
+                  return Wallet.fetch(u1.pubKey);
                })
                .then(function(w){
                   expect(w.pubKey).to.equal(u1.pubKey);
@@ -45,11 +47,10 @@ describe('BlockChain', () => {
     });
 
     it('should create gensis block and append to the blockchian', () => {
-      return bc.$init()
+      return bc.$createGenesis()
                .then(function(){ return bc._chain.$reduce( (b,x) => x+1, 0) })
                .then(function(c){ expect(c).to.equal(1) });
     });
-
     it('should contain the coinbase transaction', () => {
       let cbtx = Transaction.newCoinbaseTx();
       return bc._chain.$fetchLast()
@@ -87,4 +88,5 @@ describe('BlockChain', () => {
                .catch(function(b){ expect(b).to.eq('Not enough funds')       })
     });
   });
+
 });
